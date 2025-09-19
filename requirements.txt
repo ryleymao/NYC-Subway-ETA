@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+pydantic
+SQLAlchemy
+psycopg2-binary
+alembic
+redis
+httpx
+protobuf
+gtfs-realtime-bindings
+structlog
+prometheus-client
+python-dotenv
+pytest
