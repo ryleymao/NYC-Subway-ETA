@@ -1,4 +1,5 @@
-import asyncio, time
+import asyncio, time, sys, pathlib
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from app.state.store import ArrivalStore
 from app.service.schemas import Arrival
 
