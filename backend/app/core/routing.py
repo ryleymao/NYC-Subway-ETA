@@ -34,6 +34,22 @@ class RoutePlanner:
             self.graph_loaded = True
             logger.info(f"Loaded graph with {len(self.graph)} nodes")
 
+    def _get_directional_stop_ids(self, base_stop_id: str) -> List[str]:
+        """Get all directional variations of a stop ID that exist in the graph"""
+        # If the stop ID already has a direction, return it
+        if base_stop_id.endswith(('N', 'S', 'E', 'W')):
+            return [base_stop_id] if base_stop_id in self.graph else []
+
+        # Try all possible directions
+        possible_ids = [
+            f"{base_stop_id}N",
+            f"{base_stop_id}S",
+            f"{base_stop_id}E",
+            f"{base_stop_id}W"
+        ]
+
+        return [stop_id for stop_id in possible_ids if stop_id in self.graph]
+
     async def find_best_route(
         self,
         from_stop_id: str,
@@ -43,31 +59,56 @@ class RoutePlanner:
     ) -> Optional[RouteResponse]:
         """
         Find the best route using Dijkstra with live first-leg overlay
+        Handles both base stop IDs (e.g., "127") and directional IDs (e.g., "127N")
         """
         self._ensure_graph_loaded(db)
 
-        if from_stop_id not in self.graph:
+        # Get all possible directional variations of the origin and destination
+        from_options = self._get_directional_stop_ids(from_stop_id)
+        to_options = self._get_directional_stop_ids(to_stop_id)
+
+        logger.info(f"From stop {from_stop_id} has options: {from_options}")
+        logger.info(f"To stop {to_stop_id} has options: {to_options}")
+
+        if not from_options:
             logger.warning(f"Origin stop {from_stop_id} not found in graph. Graph has {len(self.graph)} nodes")
+            return None
+
+        if not to_options:
+            logger.warning(f"Destination stop {to_stop_id} not found in graph")
             return None
 
         if from_stop_id == to_stop_id:
             return RouteResponse(legs=[], transfers=0, total_eta_s=0, alerts=[])
 
-        # Check if destination exists
-        if to_stop_id not in self.graph:
-            logger.warning(f"Destination stop {to_stop_id} not found in graph")
-            return None
+        # Try all combinations of origin and destination directions to find the best route
+        best_route = None
+        best_cost = float('inf')
 
-        # Run Dijkstra's algorithm
-        logger.info(f"Running Dijkstra from {from_stop_id} to {to_stop_id}")
-        path = self._dijkstra(from_stop_id, to_stop_id, max_transfers)
+        for from_dir in from_options:
+            for to_dir in to_options:
+                # Skip if same exact stop
+                if from_dir == to_dir:
+                    continue
 
-        if not path:
+                logger.info(f"Trying route from {from_dir} to {to_dir}")
+                path = self._dijkstra(from_dir, to_dir, max_transfers)
+
+                if path:
+                    # Calculate total cost for this path
+                    total_cost = sum(edge[3] for edge in path)  # edge[3] is travel_time
+
+                    if total_cost < best_cost:
+                        best_cost = total_cost
+                        best_route = path
+                        logger.info(f"Found better route from {from_dir} to {to_dir} with cost {total_cost}")
+
+        if not best_route:
             logger.warning(f"No path found from {from_stop_id} to {to_stop_id}")
             return None
 
         # Convert path to route legs with live overlay
-        legs = await self._path_to_legs(path, db)
+        legs = await self._path_to_legs(best_route, db)
         if not legs:
             return None
 
