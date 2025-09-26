@@ -1,0 +1,8 @@
+NYC SUBWAY ETA ACCURACY EVALUATION
+=============================================
+
+Total trips: 100
+Baseline median error: 405s
+Live median error: 281s
+Median improvement: 29.7%
+Success rate: 100%

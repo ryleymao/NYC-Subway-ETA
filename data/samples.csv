@@ -1,0 +1,51 @@
+trip_id,from_stop_id,from_name,to_stop_id,to_name,expected_duration_min
+trip_001,635,Times Sq-42 St,127,14 St-Union Sq,12
+trip_002,902,Herald Sq-34 St,232,Grand Central-42 St,8
+trip_003,127,14 St-Union Sq,420,Canal St,15
+trip_004,232,Grand Central-42 St,629,59 St-Columbus Circle,18
+trip_005,420,Canal St,R16,14 St-8 Ave,22
+trip_006,629,59 St-Columbus Circle,D14,47-50 Sts-Rockefeller Ctr,10
+trip_007,R16,14 St-8 Ave,A32,Penn Station-34 St,14
+trip_008,D14,47-50 Sts-Rockefeller Ctr,L14,6 Ave-14 St,16
+trip_009,A32,Penn Station-34 St,G22,Court Sq-23 St,25
+trip_010,L14,6 Ave-14 St,F18,Jay St-MetroTech,28
+trip_011,G22,Court Sq-23 St,635,Times Sq-42 St,20
+trip_012,F18,Jay St-MetroTech,902,Herald Sq-34 St,18
+trip_013,635,Times Sq-42 St,232,Grand Central-42 St,5
+trip_014,127,14 St-Union Sq,629,59 St-Columbus Circle,25
+trip_015,420,Canal St,D14,47-50 Sts-Rockefeller Ctr,12
+trip_016,R16,14 St-8 Ave,G22,Court Sq-23 St,30
+trip_017,A32,Penn Station-34 St,F18,Jay St-MetroTech,22
+trip_018,L14,6 Ave-14 St,635,Times Sq-42 St,8
+trip_019,902,Herald Sq-34 St,127,14 St-Union Sq,15
+trip_020,232,Grand Central-42 St,420,Canal St,20
+trip_021,629,59 St-Columbus Circle,R16,14 St-8 Ave,18
+trip_022,D14,47-50 Sts-Rockefeller Ctr,A32,Penn Station-34 St,6
+trip_023,G22,Court Sq-23 St,L14,6 Ave-14 St,35
+trip_024,F18,Jay St-MetroTech,635,Times Sq-42 St,32
+trip_025,635,Times Sq-42 St,420,Canal St,18
+trip_026,127,14 St-Union Sq,D14,47-50 Sts-Rockefeller Ctr,20
+trip_027,902,Herald Sq-34 St,R16,14 St-8 Ave,12
+trip_028,232,Grand Central-42 St,A32,Penn Station-34 St,8
+trip_029,420,Canal St,G22,Court Sq-23 St,35
+trip_030,629,59 St-Columbus Circle,F18,Jay St-MetroTech,28
+trip_031,R16,14 St-8 Ave,635,Times Sq-42 St,10
+trip_032,D14,47-50 Sts-Rockefeller Ctr,127,14 St-Union Sq,22
+trip_033,A32,Penn Station-34 St,902,Herald Sq-34 St,6
+trip_034,L14,6 Ave-14 St,232,Grand Central-42 St,16
+trip_035,G22,Court Sq-23 St,420,Canal St,30
+trip_036,F18,Jay St-MetroTech,629,59 St-Columbus Circle,25
+trip_037,635,Times Sq-42 St,R16,14 St-8 Ave,12
+trip_038,127,14 St-Union Sq,A32,Penn Station-34 St,18
+trip_039,902,Herald Sq-34 St,L14,6 Ave-14 St,14
+trip_040,232,Grand Central-42 St,G22,Court Sq-23 St,35
+trip_041,420,Canal St,F18,Jay St-MetroTech,28
+trip_042,629,59 St-Columbus Circle,635,Times Sq-42 St,15
+trip_043,D14,47-50 Sts-Rockefeller Ctr,902,Herald Sq-34 St,8
+trip_044,R16,14 St-8 Ave,127,14 St-Union Sq,12
+trip_045,A32,Penn Station-34 St,232,Grand Central-42 St,10
+trip_046,L14,6 Ave-14 St,420,Canal St,20
+trip_047,G22,Court Sq-23 St,629,59 St-Columbus Circle,25
+trip_048,F18,Jay St-MetroTech,D14,47-50 Sts-Rockefeller Ctr,22
+trip_049,635,Times Sq-42 St,A32,Penn Station-34 St,8
+trip_050,127,14 St-Union Sq,L14,6 Ave-14 St,5

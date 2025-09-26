@@ -1,0 +1,10 @@
+========================= test session starts =========================
+collected 18 items
+
+tests/unit/test_health.py ..                               [ 11%]
+tests/unit/test_cache.py ....                              [ 33%]
+tests/unit/test_routing.py .....                           [ 61%]
+tests/integration/test_api.py ......                       [ 94%]
+tests/integration/test_gtfs_loading.py .                    [100%]
+
+========================= 18 passed in 4.23s =========================

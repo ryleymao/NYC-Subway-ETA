@@ -1,0 +1,23 @@
+HTTP/1.1 200 OK
+date: Wed, 25 Sep 2024 18:12:34 GMT
+server: uvicorn
+content-length: 1247
+content-type: text/html; charset=utf-8
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NYC Subway ETA API - Swagger UI</title>
+    <link rel="stylesheet" type="text/css" href="/static/swagger-ui-bundle.css" />
+    <link rel="icon" type="image/png" href="/static/favicon.png" />
+    <style>
+        html {
+            box-sizing: border-box;
+            overflow: -moz-scrollbars-vertical;
+            overflow-y: scroll;
+        }
+    </style>
+</head>
+<body>
+<div id="swagger-ui"></div>
+<script src="/static/swagger-ui-bundle.js"></script>

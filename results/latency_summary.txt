@@ -1,0 +1,38 @@
+🚇 NYC SUBWAY ETA LATENCY BENCHMARK RESULTS
+==================================================
+
+📊 OVERALL LATENCY STATISTICS
+------------------------------
+Total successful requests: 240
+Min latency:      16.0 ms
+Mean latency:     59.8 ms
+Median (p50):     47.5 ms
+p90 latency:     112.9 ms
+p95 latency:     130.0 ms ⭐
+p99 latency:     144.0 ms
+Max latency:     146.0 ms
+
+✅ P95 LATENCY TARGET MET: 130.0ms ≤ 150.0ms
+
+🚉 PER-STATION BREAKDOWN
+------------------------------
+Station              Requests   Mean     p95     
+--------------------------------------------------
+127:N                20           60.9ms  140.7ms
+232:S                20           61.4ms  123.2ms
+420:N                20           61.9ms  145.2ms
+629:S                20           60.8ms  136.9ms
+635:N                20           50.0ms  104.7ms
+902:S                20           48.6ms  126.4ms
+A32:N                20           62.4ms  142.3ms
+D14:S                20           56.5ms  109.8ms
+F18:S                20           68.5ms  143.8ms
+G22:N                20           82.9ms  140.6ms
+L14:S                20           49.7ms  108.2ms
+R16:N                20           54.2ms  132.4ms
+
+📈 PERFORMANCE ANALYSIS
+------------------------------
+⚡ Fast (<50ms):     129 ( 53.8%)
+📈 Medium (50-150ms): 111 ( 46.2%)
+🐌 Slow (≥150ms):       0 (  0.0%)

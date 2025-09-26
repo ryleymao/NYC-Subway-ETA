@@ -1,0 +1,6 @@
+NAME                    IMAGE               COMMAND                  SERVICE      CREATED       STATUS               PORTS
+infra-api-1            infra-api           "uvicorn app.main:ap…"   api          3 hours ago   Up 3 hours (healthy)   0.0.0.0:8000->8000/tcp
+infra-frontend-1       nginx:alpine        "/docker-entrypoint…"   frontend     3 hours ago   Up 3 hours             0.0.0.0:3000->80/tcp
+infra-poller-1         infra-api           "python -m app.core.…"   poller       3 hours ago   Up 3 hours
+infra-postgres-1       postgres:15-alpine  "docker-entrypoint.s…"   postgres     3 hours ago   Up 3 hours (healthy)   0.0.0.0:5432->5432/tcp
+infra-redis-1          redis:7-alpine      "docker-entrypoint.s…"   redis        3 hours ago   Up 3 hours (healthy)   0.0.0.0:6379->6379/tcp

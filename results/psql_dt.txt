@@ -1,0 +1,15 @@
+                      List of relations
+ Schema |      Name       | Type  |  Owner
+--------+-----------------+-------+----------
+ public | agencies        | table | postgres
+ public | alembic_version | table | postgres
+ public | calendar        | table | postgres
+ public | calendar_dates  | table | postgres
+ public | routes          | table | postgres
+ public | shapes          | table | postgres
+ public | station_graph   | table | postgres
+ public | stop_times      | table | postgres
+ public | stops           | table | postgres
+ public | transfers       | table | postgres
+ public | trips           | table | postgres
+(11 rows)

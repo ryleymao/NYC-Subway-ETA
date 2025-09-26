@@ -1,0 +1,12 @@
+{
+  "status": "healthy",
+  "feed_age_seconds": 37,
+  "db_ms": 12.4,
+  "redis_status": {
+    "status": "healthy",
+    "connected_clients": 5,
+    "used_memory": "24M",
+    "cached_arrivals": 247,
+    "feed_age_seconds": 37
+  }
+}
