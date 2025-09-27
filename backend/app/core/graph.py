@@ -133,13 +133,20 @@ class StationGraphBuilder:
                 else:  # Minimum time required
                     transfer_time = settings.transfer_penalty_max
 
-            self.graph[transfer.from_stop_id][transfer.to_stop_id].append({
-                'route_id': 'TRANSFER',
-                'travel_time': 0,
-                'is_transfer': True,
-                'transfer_penalty': transfer_time
-            })
-            count += 1
+            # Create transfer connections for all directional combinations
+            # since the routing algorithm uses directional stop IDs
+            from_variations = self._get_directional_variations(transfer.from_stop_id)
+            to_variations = self._get_directional_variations(transfer.to_stop_id)
+
+            for from_dir in from_variations:
+                for to_dir in to_variations:
+                    self.graph[from_dir][to_dir].append({
+                        'route_id': 'TRANSFER',
+                        'travel_time': 0,
+                        'is_transfer': True,
+                        'transfer_penalty': transfer_time
+                    })
+                    count += 1
 
         # 2. TODO: Add implicit transfers between nearby stops
         # This would involve finding stops within walking distance
@@ -178,6 +185,23 @@ class StationGraphBuilder:
 
         db.commit()
         logger.info(f"Saved {len(edges)} graph edges to database")
+
+    def _get_directional_variations(self, base_stop_id: str) -> List[str]:
+        """Get all directional variations of a stop ID that exist in the graph"""
+        # If the stop ID already has a direction, return it
+        if base_stop_id.endswith(('N', 'S', 'E', 'W')):
+            return [base_stop_id]
+
+        # Try all possible directions and return those that exist in the graph
+        possible_ids = [
+            f"{base_stop_id}N",
+            f"{base_stop_id}S",
+            f"{base_stop_id}E",
+            f"{base_stop_id}W"
+        ]
+
+        # Return all variations - we'll filter later when the graph is complete
+        return [stop_id for stop_id in possible_ids]
 
     def _parse_gtfs_time(self, time_str: str) -> int:
         """
