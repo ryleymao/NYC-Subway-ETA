@@ -275,7 +275,13 @@
             border-radius: 8px;
             border: 1px solid var(--border-color);
             border-left: 4px solid #059669;
-            transition: background-color 0.3s ease;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .route-step:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
         }
 
         .transfer-step {
@@ -284,6 +290,32 @@
 
         [data-theme="dark"] .transfer-step {
             background: rgba(245, 158, 11, 0.1);
+        }
+
+        .step-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            opacity: 0.7;
+        }
+
+        .route-step:hover .step-hint {
+            opacity: 1;
+        }
+
+        .route-marker {
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            background: white;
+        }
+
+        .route-highlight {
+            z-index: 1000;
         }
 
         .step-header {
@@ -656,6 +688,69 @@
             getArrivals();
         }
 
+        // Highlight route on map
+        function highlightRouteOnMap(fromStopId, toStopId, lineColor) {
+            // Clear existing route highlighting
+            clearRouteHighlighting();
+
+            // Get station coordinates
+            const fromStation = allStations.find(s => s.id === fromStopId.replace(/[NSEW]$/, ''));
+            const toStation = allStations.find(s => s.id === toStopId.replace(/[NSEW]$/, ''));
+
+            if (!fromStation || !toStation) {
+                console.warn('Could not find stations for route highlighting:', fromStopId, toStopId);
+                return;
+            }
+
+            // Draw route line on map
+            const routeLine = L.polyline([
+                [fromStation.lat, fromStation.lon],
+                [toStation.lat, toStation.lon]
+            ], {
+                color: lineColor,
+                weight: 6,
+                opacity: 0.8,
+                className: 'route-highlight'
+            }).addTo(map);
+
+            // Add special markers for route endpoints
+            const routeStartIcon = L.divIcon({
+                className: 'route-marker route-start',
+                html: '🚇',
+                iconSize: [25, 25],
+                iconAnchor: [12, 12]
+            });
+
+            const routeEndIcon = L.divIcon({
+                className: 'route-marker route-end',
+                html: '🎯',
+                iconSize: [25, 25],
+                iconAnchor: [12, 12]
+            });
+
+            const startMarker = L.marker([fromStation.lat, fromStation.lon], { icon: routeStartIcon }).addTo(map);
+            const endMarker = L.marker([toStation.lat, toStation.lon], { icon: routeEndIcon }).addTo(map);
+
+            // Store for cleanup
+            window.currentRouteHighlights = [routeLine, startMarker, endMarker];
+
+            // Fit map to show the route
+            map.fitBounds([
+                [fromStation.lat, fromStation.lon],
+                [toStation.lat, toStation.lon]
+            ], { padding: [20, 20] });
+        }
+
+        // Clear route highlighting
+        function clearRouteHighlighting() {
+            if (window.currentRouteHighlights) {
+                window.currentRouteHighlights.forEach(layer => {
+                    map.removeLayer(layer);
+                });
+                window.currentRouteHighlights = null;
+            }
+        }
+
         // Highlight selected station
         function highlightStation(stationId) {
             // Reset all markers to their original colors
@@ -742,6 +837,9 @@
 
         // Plan trip
         async function planTrip() {
+            // Clear any existing route highlighting
+            clearRouteHighlighting();
+
             const fromId = document.getElementById('fromStation').value;
             const toId = document.getElementById('toStation').value;
 
@@ -773,17 +871,20 @@
                     `;
 
                     route.legs.forEach((leg, index) => {
-                        const boardMin = Math.floor(leg.board_in_s / 60);
-                        const runMin = Math.floor(leg.run_s / 60);
-
                         html += `
-                            <div class="route-step ${leg.transfer ? 'transfer-step' : ''}">
+                            <div class="route-step ${leg.transfer ? 'transfer-step' : ''}"
+                                 onclick="highlightRouteOnMap('${leg.from_stop_id}', '${leg.to_stop_id}', '${leg.line_color || '#6D6E71'}')"
+                                 style="cursor: pointer;">
                                 <div class="step-header">
-                                    <span class="route-badge line-${leg.route_id}">${leg.route_id}</span>
-                                    <strong>${leg.transfer ? 'Transfer' : 'Board'}</strong>
+                                    <span class="route-badge line-${leg.route_id}"
+                                          style="background-color: ${leg.line_color || '#6D6E71'};">${leg.route_id}</span>
+                                    <strong>${leg.from_stop_name || 'Station'} → ${leg.to_stop_name || 'Station'}</strong>
                                 </div>
                                 <div class="step-details">
-                                    Wait ${boardMin} min • Travel ${runMin} min
+                                    ${leg.instruction || `Wait ${Math.floor(leg.board_in_s / 60)} min • Travel ${Math.floor(leg.run_s / 60)} min`}
+                                </div>
+                                <div class="step-hint">
+                                    💡 Click to see route on map
                                 </div>
                             </div>
                         `;

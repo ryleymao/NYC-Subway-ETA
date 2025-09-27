@@ -210,13 +210,25 @@ class RoutePlanner:
                 if live_board_time is not None:
                     board_in_s = live_board_time
 
+            # Get station names and create instruction
+            from_name = await self._get_stop_name(from_stop, db)
+            to_name = await self._get_stop_name(to_stop, db)
+            direction = self._get_direction_name(from_stop, to_stop)
+            line_color = self._get_line_color(route_id)
+            instruction = self._create_instruction(route_id, from_name, to_name, direction, board_in_s, travel_time, (i > 0))
+
             legs.append(RouteLeg(
                 route_id=route_id,
                 from_stop_id=from_stop,
                 to_stop_id=to_stop,
+                from_stop_name=from_name,
+                to_stop_name=to_name,
                 board_in_s=board_in_s,
                 run_s=travel_time,
-                transfer=(i > 0)  # First leg is never a transfer
+                transfer=(i > 0),  # First leg is never a transfer
+                direction=direction,
+                line_color=line_color,
+                instruction=instruction
             ))
 
         return legs
@@ -249,6 +261,98 @@ class RoutePlanner:
         except Exception as e:
             logger.error(f"Error getting live boarding time for {stop_id} route {route_id}: {e}")
             return None
+
+    async def _get_stop_name(self, stop_id: str, db: Session) -> str:
+        """Get the human-readable name for a stop"""
+        try:
+            # Remove directional suffix to get base stop ID
+            base_stop_id = stop_id.rstrip('NSEW')
+
+            from app.models.models import Stop
+            stop = db.query(Stop).filter(Stop.stop_id == base_stop_id).first()
+            if stop and stop.stop_name:
+                return stop.stop_name
+            return f"Station {base_stop_id}"
+        except Exception as e:
+            logger.error(f"Error getting stop name for {stop_id}: {e}")
+            return f"Station {stop_id}"
+
+    def _get_direction_name(self, from_stop: str, to_stop: str) -> str:
+        """Get human-readable direction name"""
+        from_dir = from_stop[-1] if from_stop.endswith(('N', 'S', 'E', 'W')) else ''
+        to_dir = to_stop[-1] if to_stop.endswith(('N', 'S', 'E', 'W')) else ''
+
+        if from_dir == 'N' or to_dir == 'N':
+            return "Uptown"
+        elif from_dir == 'S' or to_dir == 'S':
+            return "Downtown"
+        elif from_dir == 'E' or to_dir == 'E':
+            return "Eastbound"
+        elif from_dir == 'W' or to_dir == 'W':
+            return "Westbound"
+        else:
+            return "Continuing"
+
+    def _get_line_color(self, route_id: str) -> str:
+        """Get the official MTA color for a subway line"""
+        line_colors = {
+            # IRT Lexington Avenue Line
+            '4': '#00933C', '5': '#00933C', '6': '#00933C', '6X': '#00933C',
+            # IRT Broadway-Seventh Avenue Line
+            '1': '#EE352E', '2': '#EE352E', '3': '#EE352E',
+            # IRT Flushing Line
+            '7': '#B933AD', '7X': '#B933AD',
+            # BMT Broadway Line
+            'N': '#FCCC0A', 'Q': '#FCCC0A', 'R': '#FCCC0A', 'W': '#FCCC0A',
+            # BMT Brighton Line
+            'B': '#FF6319', 'D': '#FF6319', 'F': '#FF6319', 'M': '#FF6319',
+            # IND Eighth Avenue Line
+            'A': '#0039A6', 'C': '#0039A6', 'E': '#0039A6',
+            # BMT Canarsie Line
+            'L': '#A7A9AC',
+            # IND Queens Boulevard Line
+            'V': '#FF6319',
+            # Shuttles
+            'S': '#808183',
+            # SIR
+            'SI': '#0039A6',
+            # JFK AirTrain
+            'H': '#0039A6',
+            # Default for unknown routes
+            'TRANSFER': '#6D6E71'
+        }
+        return line_colors.get(route_id, '#6D6E71')
+
+    def _create_instruction(self, route_id: str, from_name: str, to_name: str,
+                          direction: str, board_in_s: int, travel_time: int, is_transfer: bool) -> str:
+        """Create human-readable instruction for this leg"""
+
+        if route_id == 'TRANSFER':
+            transfer_time = board_in_s // 60
+            return f"Transfer to another line ({transfer_time} min walk)"
+
+        # Format times
+        wait_min = board_in_s // 60
+        wait_sec = board_in_s % 60
+        travel_min = travel_time // 60
+        travel_sec = travel_time % 60
+
+        # Create wait time description
+        if wait_min > 0:
+            wait_desc = f"{wait_min} min" + (f" {wait_sec}s" if wait_sec > 0 else "")
+        else:
+            wait_desc = f"{wait_sec}s"
+
+        # Create travel time description
+        if travel_min > 0:
+            travel_desc = f"{travel_min} min" + (f" {travel_sec}s" if travel_sec > 0 else "")
+        else:
+            travel_desc = f"{travel_sec}s"
+
+        if is_transfer:
+            return f"Transfer to {route_id} train {direction.lower()} to {to_name} ({travel_desc} ride, next train in {wait_desc})"
+        else:
+            return f"Take {route_id} train {direction.lower()} to {to_name} ({travel_desc} ride, next train in {wait_desc})"
 
     def clear_graph_cache(self):
         """Clear the loaded graph cache (for testing or updates)"""

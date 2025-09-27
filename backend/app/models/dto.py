@@ -85,9 +85,14 @@ class RouteLeg(BaseModel):
     route_id: str
     from_stop_id: str
     to_stop_id: str
+    from_stop_name: str = Field(..., description="Origin station name")
+    to_stop_name: str = Field(..., description="Destination station name")
     board_in_s: int = Field(..., description="Time to board in seconds")
     run_s: int = Field(..., description="Travel time in seconds")
     transfer: bool = Field(False, description="Whether this is a transfer leg")
+    direction: Optional[str] = Field(None, description="Travel direction (Uptown/Downtown/etc)")
+    line_color: Optional[str] = Field(None, description="Subway line color")
+    instruction: str = Field(..., description="Human-readable instruction")
 
     class Config:
         json_schema_extra = {
@@ -95,9 +100,14 @@ class RouteLeg(BaseModel):
                 "route_id": "N",
                 "from_stop_id": "635",
                 "to_stop_id": "902",
+                "from_stop_name": "14 St-Union Sq",
+                "to_stop_name": "Times Sq-42 St",
                 "board_in_s": 120,
                 "run_s": 480,
-                "transfer": False
+                "transfer": False,
+                "direction": "Uptown",
+                "line_color": "#FCCC0A",
+                "instruction": "Take N train uptown to Times Sq-42 St (8 min ride, next train in 2 min)"
             }
         }
 

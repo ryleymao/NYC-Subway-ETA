@@ -78,7 +78,9 @@ Then open http://localhost:8000 for the demo interface.
 
 **📱 Core Features**:
 - **Live Arrivals**: Real-time subway arrivals by station/direction
-- **Trip Planning**: Optimal routes with live timing and transfers
+- **Enhanced Trip Planning**: Detailed routes with station names, directions, and human-readable instructions
+- **Interactive Route Visualization**: Click route steps to highlight paths on map with official MTA line colors
+- **Transfer-Aware Routing**: Cross-line transfers between all NYC subway systems (1/2/3 ↔ 4/5/6/N/Q/R/W)
 - **Interactive Map**: Click stations, see routes visually with color-coded lines
 - **Complete Coverage**: All 998 NYC subway stations available
 - **Real-time Updates**: Fresh data every 45 seconds from MTA feeds
@@ -138,7 +140,7 @@ curl "http://localhost:8000/route?from=635&to=902"
 ```
 
 ### `GET /route?from=<stop_id>&to=<stop_id>`
-**Response**: Best route with live first-leg timing
+**Response**: Best route with enhanced details and human-readable instructions
 ```json
 {
   "legs": [
@@ -146,9 +148,14 @@ curl "http://localhost:8000/route?from=635&to=902"
       "route_id": "N",
       "from_stop_id": "635",
       "to_stop_id": "902",
+      "from_stop_name": "14 St-Union Sq",
+      "to_stop_name": "Times Sq-42 St",
       "board_in_s": 120,
       "run_s": 480,
-      "transfer": false
+      "transfer": false,
+      "direction": "Uptown",
+      "line_color": "#FCCC0A",
+      "instruction": "Take N train uptown to Times Sq-42 St (8 min ride, next train in 2 min)"
     }
   ],
   "transfers": 0,
