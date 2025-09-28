@@ -1985,6 +1985,7 @@
 
             content.innerHTML = html;
             dropdown.style.display = 'block';
+            tripSelectedIndex = -1; // Reset selection
         }
 
         function selectTrip(fromId, fromName, toId, toName) {
@@ -2020,16 +2021,73 @@
         }
 
         function handleTripKeydown(event) {
-            // Add keyboard navigation if needed
-            if (event.key === 'Escape') {
-                hideTripDropdown();
+            const dropdown = document.getElementById('tripDropdown');
+            const items = dropdown.querySelectorAll('.dropdown-item[onclick]');
+
+            switch (event.key) {
+                case 'ArrowDown':
+                    event.preventDefault();
+                    if (tripSelectedIndex < items.length - 1) tripSelectedIndex++;
+                    updateTripSelection(items);
+                    break;
+
+                case 'ArrowUp':
+                    event.preventDefault();
+                    if (tripSelectedIndex > 0) tripSelectedIndex--;
+                    updateTripSelection(items);
+                    break;
+
+                case 'Enter':
+                    event.preventDefault();
+                    if (tripSelectedIndex >= 0 && items[tripSelectedIndex]) {
+                        items[tripSelectedIndex].click();
+                    }
+                    break;
+
+                case 'Escape':
+                    hideTripDropdown();
+                    break;
             }
+        }
+
+        let tripSelectedIndex = -1;
+
+        function updateTripSelection(items) {
+            items.forEach((item, index) => {
+                if (index === tripSelectedIndex) {
+                    item.classList.add('selected');
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
         }
 
         function searchStations(query) {
             if (!allStations || !query) return [];
             const queryLower = query.toLowerCase();
+
+            // Quick shortcuts for common stations
+            const shortcuts = {
+                'times': 'Times Sq',
+                'union': 'Union Sq',
+                'grand': 'Grand Central',
+                'penn': 'Penn Station',
+                'atlantic': 'Atlantic Av',
+                'jay': 'Jay St',
+                'dekalb': 'DeKalb Av'
+            };
+
+            let searchQuery = queryLower;
+            for (const [shortcut, fullName] of Object.entries(shortcuts)) {
+                if (queryLower.includes(shortcut)) {
+                    searchQuery = fullName.toLowerCase();
+                    break;
+                }
+            }
+
             return allStations.filter(station =>
+                station.name.toLowerCase().includes(searchQuery) ||
                 station.name.toLowerCase().includes(queryLower) ||
                 station.lines.some(line => line.toLowerCase().includes(queryLower))
             ).slice(0, 10);
