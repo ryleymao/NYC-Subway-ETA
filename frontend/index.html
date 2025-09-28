@@ -512,6 +512,70 @@
             margin: 0;
         }
 
+        /* Trip History Styles */
+        .history-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+        }
+
+        .history-item {
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .history-item:hover {
+            background: var(--border-color);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .history-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .history-route {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .history-from {
+            color: var(--text-primary);
+        }
+
+        .history-arrow {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .history-to {
+            color: var(--text-primary);
+        }
+
+        .history-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .empty-history {
+            text-align: center;
+            padding: 32px 16px;
+            color: var(--text-secondary);
+        }
+
         .results-section {
             margin-top: 24px;
         }
@@ -1046,6 +1110,23 @@
                 </div>
             </section>
 
+            <!-- Trip History Section -->
+            <section class="history-section" id="historySection">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                    <h2 class="section-title">🕒 Recent Trips</h2>
+                    <button class="btn-secondary" onclick="tripHistory.clear()" title="Clear history">Clear</button>
+                </div>
+                <div id="tripHistoryContainer">
+                    <div class="empty-history">
+                        <div style="font-size: 24px; margin-bottom: 8px;">🕒</div>
+                        <div>No recent trips</div>
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                            Complete a trip to see it here
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <aside class="sidebar">
                 <div class="search-section">
                     <h2 class="section-title">🚇 Live Arrivals</h2>
@@ -1077,7 +1158,7 @@
                     <div class="input-group">
                         <label for="fromSearch">From</label>
                         <input type="text" id="fromSearch" placeholder="Start typing station name or line..." oninput="debounceSearch('searchFromStations')" autocomplete="off">
-                        <select id="fromStation" onchange="clearToSearch()">
+                        <select id="fromStation" onchange="clearToSearch(); saveStationSelection('fromStation')">
                             <option value="">Select origin...</option>
                         </select>
                     </div>
@@ -1085,7 +1166,7 @@
                     <div class="input-group">
                         <label for="toSearch">To</label>
                         <input type="text" id="toSearch" placeholder="Destination station or line..." oninput="debounceSearch('searchToStations')" autocomplete="off">
-                        <select id="toStation">
+                        <select id="toStation" onchange="saveStationSelection('toStation')">
                             <option value="">Select destination...</option>
                         </select>
                     </div>
@@ -1426,13 +1507,11 @@
         }
 
         function searchFromStations() {
-            const query = document.getElementById('fromSearch').value.toLowerCase();
-            filterStationSelect('fromStation', query);
+            enhancedSearch('fromSearch', 'fromStation');
         }
 
         function searchToStations() {
-            const query = document.getElementById('toSearch').value.toLowerCase();
-            filterStationSelect('toStation', query);
+            enhancedSearch('toSearch', 'toStation');
         }
 
         function clearToSearch() {
@@ -1993,6 +2072,253 @@
             }
         }
 
+        // Trip History and Recent Searches System
+        const tripHistory = {
+            maxItems: 20,
+            maxRecentSearches: 10,
+
+            // Get all trip history from localStorage
+            getAll: function() {
+                try {
+                    return JSON.parse(localStorage.getItem('tripHistory') || '[]');
+                } catch (e) {
+                    console.warn('Could not load trip history:', e);
+                    return [];
+                }
+            },
+
+            // Add a completed trip to history
+            addTrip: function(from, to, fromName, toName, timestamp = Date.now()) {
+                const trips = this.getAll();
+                const trip = {
+                    id: `${from}-${to}-${timestamp}`,
+                    from,
+                    to,
+                    fromName,
+                    toName,
+                    timestamp,
+                    frequency: 1
+                };
+
+                // Check if this route already exists
+                const existingIndex = trips.findIndex(t => t.from === from && t.to === to);
+                if (existingIndex >= 0) {
+                    // Update frequency and timestamp
+                    trips[existingIndex].frequency += 1;
+                    trips[existingIndex].timestamp = timestamp;
+                    trips[existingIndex].fromName = fromName; // Update in case station name changed
+                    trips[existingIndex].toName = toName;
+                } else {
+                    // Add new trip
+                    trips.unshift(trip);
+                }
+
+                // Keep only the most recent trips
+                trips.splice(this.maxItems);
+
+                localStorage.setItem('tripHistory', JSON.stringify(trips));
+                this.renderHistory();
+            },
+
+            // Get recent searches for autocomplete
+            getRecentSearches: function() {
+                try {
+                    return JSON.parse(localStorage.getItem('recentSearches') || '[]');
+                } catch (e) {
+                    console.warn('Could not load recent searches:', e);
+                    return [];
+                }
+            },
+
+            // Add a search term to recent searches
+            addSearch: function(query, stationId = null, stationName = null) {
+                if (!query || query.length < 2) return;
+
+                const searches = this.getRecentSearches();
+                const search = {
+                    query: query.toLowerCase(),
+                    stationId,
+                    stationName,
+                    timestamp: Date.now()
+                };
+
+                // Remove existing search for this query
+                const filtered = searches.filter(s => s.query !== search.query);
+
+                // Add to beginning
+                filtered.unshift(search);
+
+                // Keep only recent searches
+                filtered.splice(this.maxRecentSearches);
+
+                localStorage.setItem('recentSearches', JSON.stringify(filtered));
+            },
+
+            // Get search suggestions based on query
+            getSuggestions: function(query) {
+                if (!query || query.length < 2) return [];
+
+                const searches = this.getRecentSearches();
+                const lowerQuery = query.toLowerCase();
+
+                return searches
+                    .filter(search => search.query.includes(lowerQuery))
+                    .slice(0, 5)
+                    .map(search => ({
+                        text: search.stationName || search.query,
+                        stationId: search.stationId,
+                        type: 'recent'
+                    }));
+            },
+
+            // Render trip history panel
+            renderHistory: function() {
+                const trips = this.getAll()
+                    .sort((a, b) => b.timestamp - a.timestamp)
+                    .slice(0, 10);
+
+                const container = document.getElementById('tripHistoryContainer');
+                if (!container) return;
+
+                if (trips.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-history">
+                            <div style="font-size: 24px; margin-bottom: 8px;">🕒</div>
+                            <div>No recent trips</div>
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                                Complete a trip to see it here
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const html = trips.map(trip => {
+                    const timeAgo = this.getTimeAgo(trip.timestamp);
+                    const frequencyText = trip.frequency > 1 ? ` • ${trip.frequency}x` : '';
+
+                    return `
+                        <div class="history-item" onclick="loadTripFromHistory('${trip.from}', '${trip.to}', '${trip.fromName}', '${trip.toName}')">
+                            <div class="history-route">
+                                <span class="history-from">${trip.fromName}</span>
+                                <span class="history-arrow">→</span>
+                                <span class="history-to">${trip.toName}</span>
+                            </div>
+                            <div class="history-meta">
+                                ${timeAgo}${frequencyText}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = html;
+            },
+
+            // Get human-readable time difference
+            getTimeAgo: function(timestamp) {
+                const now = Date.now();
+                const diff = now - timestamp;
+                const minutes = Math.floor(diff / 60000);
+                const hours = Math.floor(diff / 3600000);
+                const days = Math.floor(diff / 86400000);
+
+                if (minutes < 1) return 'Just now';
+                if (minutes < 60) return `${minutes}m ago`;
+                if (hours < 24) return `${hours}h ago`;
+                if (days < 7) return `${days}d ago`;
+                return new Date(timestamp).toLocaleDateString();
+            },
+
+            // Clear all history
+            clear: function() {
+                localStorage.removeItem('tripHistory');
+                localStorage.removeItem('recentSearches');
+                this.renderHistory();
+            }
+        };
+
+        // Load trip from history
+        function loadTripFromHistory(fromId, toId, fromName, toName) {
+            // Set the dropdowns
+            document.getElementById('fromStation').value = fromId;
+            document.getElementById('toStation').value = toId;
+
+            // Set the search inputs
+            document.getElementById('fromSearch').value = fromName;
+            document.getElementById('toSearch').value = toName;
+
+            // Plan the trip
+            planTrip();
+        }
+
+        // Enhanced search with recent suggestions
+        function enhancedSearch(inputId, targetSelectId) {
+            const input = document.getElementById(inputId);
+            const query = input.value.trim();
+
+            if (query.length < 2) {
+                document.getElementById(targetSelectId).innerHTML = '<option value="">Type to search...</option>';
+                return;
+            }
+
+            // Add to recent searches
+            tripHistory.addSearch(query);
+
+            // Get suggestions from recent searches
+            const suggestions = tripHistory.getSuggestions(query);
+
+            // Get matching stations from allStations
+            const stationMatches = allStations
+                .filter(station =>
+                    station.name.toLowerCase().includes(query.toLowerCase()) ||
+                    station.lines.some(line => line.toLowerCase().includes(query.toLowerCase()))
+                )
+                .slice(0, 8);
+
+            // Combine suggestions and station matches
+            const select = document.getElementById(targetSelectId);
+            let options = '<option value="">Select station...</option>';
+
+            // Add recent suggestions first
+            if (suggestions.length > 0) {
+                options += '<optgroup label="Recent Searches">';
+                suggestions.forEach(suggestion => {
+                    if (suggestion.stationId) {
+                        options += `<option value="${suggestion.stationId}">🕒 ${suggestion.text}</option>`;
+                    }
+                });
+                options += '</optgroup>';
+            }
+
+            // Add station matches
+            if (stationMatches.length > 0) {
+                if (suggestions.length > 0) {
+                    options += '<optgroup label="Stations">';
+                }
+                stationMatches.forEach(station => {
+                    const lines = station.lines.join(' ');
+                    options += `<option value="${station.id}">${station.name} (${lines})</option>`;
+                });
+                if (suggestions.length > 0) {
+                    options += '</optgroup>';
+                }
+            }
+
+            select.innerHTML = options;
+        }
+
+        // Save station selection to recent searches
+        function saveStationSelection(selectId) {
+            const select = document.getElementById(selectId);
+            const stationId = select.value;
+            if (!stationId) return;
+
+            const station = allStations.find(s => s.id === stationId);
+            if (station) {
+                tripHistory.addSearch(station.name, stationId, station.name);
+            }
+        }
+
         // Plan trip with filters
         async function planTrip() {
             // Clear any existing route highlighting
@@ -2079,6 +2405,9 @@
 
                     html += '</div>';
                     document.getElementById('results').innerHTML = html;
+
+                    // Add to trip history
+                    tripHistory.addTrip(fromId, toId, fromStation.name, toStation.name);
                 } else {
                     const error = await response.json();
                     document.getElementById('results').innerHTML = `<div style="text-align: center; padding: 20px; color: #dc3545;">${error.detail || 'No route found'}</div>`;
@@ -2293,6 +2622,9 @@
 
             // Initialize keyboard shortcuts
             initializeKeyboardShortcuts();
+
+            // Initialize trip history
+            tripHistory.renderHistory();
 
             // Load route from URL if parameters exist
             setTimeout(() => {
