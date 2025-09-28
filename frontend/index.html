@@ -485,7 +485,7 @@
 
                     <div class="input-group">
                         <label for="stationSearch">Find a station</label>
-                        <input type="text" id="stationSearch" placeholder="Times Square, Union Square..." oninput="searchStations()">
+                        <input type="text" id="stationSearch" placeholder="Search stations... (e.g. Times Square, 14 St, Q train)" oninput="debounceSearch('searchStations')" autocomplete="off">
                     </div>
 
                     <div class="input-group">
@@ -509,7 +509,7 @@
 
                     <div class="input-group">
                         <label for="fromSearch">From</label>
-                        <input type="text" id="fromSearch" placeholder="From station..." oninput="searchFromStations()">
+                        <input type="text" id="fromSearch" placeholder="Start typing station name or line..." oninput="debounceSearch('searchFromStations')" autocomplete="off">
                         <select id="fromStation">
                             <option value="">Select origin...</option>
                         </select>
@@ -517,7 +517,7 @@
 
                     <div class="input-group">
                         <label for="toSearch">To</label>
-                        <input type="text" id="toSearch" placeholder="To station..." oninput="searchToStations()">
+                        <input type="text" id="toSearch" placeholder="Destination station or line..." oninput="debounceSearch('searchToStations')" autocomplete="off">
                         <select id="toStation">
                             <option value="">Select destination...</option>
                         </select>
@@ -701,6 +701,16 @@
         }
 
         // Search functionality
+        // Debounce timers
+        let searchTimers = {};
+
+        function debounceSearch(functionName) {
+            clearTimeout(searchTimers[functionName]);
+            searchTimers[functionName] = setTimeout(() => {
+                window[functionName]();
+            }, 150);
+        }
+
         function searchStations() {
             const query = document.getElementById('stationSearch').value.toLowerCase();
             filterStationSelect('stationSelect', query);
@@ -720,17 +730,64 @@
             const select = document.getElementById(selectId);
             select.innerHTML = '<option value="">Select a station...</option>';
 
-            const filtered = allStations.filter(station =>
-                station.name.toLowerCase().includes(query) ||
-                station.lines.some(line => line.toLowerCase().includes(query))
-            );
+            if (!query || query.length < 2) {
+                // Show all stations if query is too short
+                allStations.slice(0, 20).forEach(station => {
+                    const option = document.createElement('option');
+                    option.value = station.id;
+                    option.textContent = `${station.name} (${station.lines.join(', ')})`;
+                    select.appendChild(option);
+                });
+                return;
+            }
 
-            filtered.forEach(station => {
+            // Enhanced search with scoring
+            const scored = allStations.map(station => {
+                let score = 0;
+                const name = station.name.toLowerCase();
+                const queryLower = query.toLowerCase();
+
+                // Exact match bonus
+                if (name === queryLower) score += 100;
+
+                // Starts with bonus
+                if (name.startsWith(queryLower)) score += 50;
+
+                // Contains bonus
+                if (name.includes(queryLower)) score += 20;
+
+                // Word boundary bonus
+                const words = name.split(/[\s-]+/);
+                words.forEach(word => {
+                    if (word.startsWith(queryLower)) score += 30;
+                });
+
+                // Line match bonus
+                station.lines.forEach(line => {
+                    if (line.toLowerCase().includes(queryLower)) score += 10;
+                });
+
+                return { station, score };
+            })
+            .filter(item => item.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 15); // Limit results
+
+            scored.forEach(({ station }) => {
                 const option = document.createElement('option');
                 option.value = station.id;
-                option.textContent = station.name;
+                option.textContent = `${station.name} (${station.lines.join(', ')})`;
                 select.appendChild(option);
             });
+
+            // Show "no results" if nothing found
+            if (scored.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No stations found...';
+                option.disabled = true;
+                select.appendChild(option);
+            }
         }
 
         // Select station from map
