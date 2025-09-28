@@ -592,6 +592,51 @@
             color: #ff6b35;
         }
 
+        /* Auto-refresh controls */
+        .refresh-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .refresh-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .refresh-btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .refresh-btn.refreshing {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .auto-refresh-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+        }
+
         .empty-state {
             text-align: center;
             padding: 48px 24px;
@@ -1204,10 +1249,21 @@
                     timestamp: Date.now()
                 });
 
+                // Store for auto-refresh
+                lastArrivalsStation = stationId;
+                lastArrivalsDirection = direction;
+
                 let html = `
                 <div class="results-section">
                     <h3 class="section-title">🚇 ${station.name}</h3>
                     <p style="margin-bottom: 16px; color: #6b7280; font-size: 14px;">${direction === 'N' ? 'Northbound' : 'Southbound'} trains</p>
+                    <div class="refresh-controls">
+                        <button class="refresh-btn" onclick="refreshArrivals()">🔄 Refresh</button>
+                        <div class="auto-refresh-toggle">
+                            <input type="checkbox" id="autoRefreshToggle" onchange="toggleAutoRefresh()">
+                            <label for="autoRefreshToggle">Auto-refresh (30s)</label>
+                        </div>
+                    </div>
             `;
 
                 if (data.arrivals && data.arrivals.length > 0) {
@@ -1451,6 +1507,68 @@
                 document.getElementById('toStation').value = toId;
                 planTrip();
             }
+        }
+
+        // Auto-refresh functionality
+        let autoRefreshInterval = null;
+        let lastArrivalsStation = null;
+        let lastArrivalsDirection = null;
+
+        function toggleAutoRefresh() {
+            const checkbox = document.getElementById('autoRefreshToggle');
+            if (checkbox.checked) {
+                startAutoRefresh();
+                showToast('Auto-refresh enabled! 🔄');
+            } else {
+                stopAutoRefresh();
+                showToast('Auto-refresh disabled');
+            }
+        }
+
+        function startAutoRefresh() {
+            if (autoRefreshInterval) return;
+
+            autoRefreshInterval = setInterval(() => {
+                if (lastArrivalsStation && lastArrivalsDirection) {
+                    refreshArrivals();
+                }
+            }, 30000); // Refresh every 30 seconds
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+
+        function refreshArrivals() {
+            if (!lastArrivalsStation) return;
+
+            const btn = document.querySelector('.refresh-btn');
+            if (btn) {
+                btn.classList.add('refreshing');
+                btn.textContent = '🔄 Refreshing...';
+            }
+
+            // Store current station info
+            const stationId = lastArrivalsStation;
+            const direction = lastArrivalsDirection;
+
+            // Call the arrivals function
+            const stationSelect = document.getElementById('stationSelect');
+            const directionSelect = document.getElementById('directionSelect');
+
+            stationSelect.value = stationId;
+            directionSelect.value = direction;
+
+            setTimeout(() => {
+                getArrivals();
+                if (btn) {
+                    btn.classList.remove('refreshing');
+                    btn.textContent = '🔄 Refresh';
+                }
+            }, 1000);
         }
 
         // Initialize on page load
