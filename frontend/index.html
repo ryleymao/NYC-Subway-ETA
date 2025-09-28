@@ -110,6 +110,29 @@
             background: var(--border-color);
         }
 
+        .help-button {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 16px;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .help-button:hover {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .help-button:active {
+            transform: scale(0.95);
+        }
+
         .theme-option {
             padding: 4px 8px;
             border-radius: 12px;
@@ -199,6 +222,99 @@
             outline: none;
             border-color: var(--accent-color);
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Search Dropdown Styles */
+        .search-dropdown-container {
+            position: relative;
+        }
+
+        .search-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .dropdown-content {
+            padding: 0;
+        }
+
+        .dropdown-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .dropdown-item.selected {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .dropdown-item.recent {
+            background: var(--bg-secondary);
+        }
+
+        .dropdown-item-main {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .dropdown-item-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .dropdown-item.selected .dropdown-item-name {
+            color: white;
+        }
+
+        .dropdown-item-lines {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .dropdown-item.selected .dropdown-item-lines {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .dropdown-item-meta {
+            font-size: 11px;
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
+        .dropdown-group-header {
+            padding: 8px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .btn {
@@ -362,6 +478,195 @@
             width: auto;
             margin-right: 8px;
             margin-bottom: 0;
+        }
+
+        /* Keyboard Help Modal Styles */
+        .keyboard-help-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border-color);
+            outline: none;
+        }
+
+        .modal-header {
+            padding: 20px 24px 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 4px;
+            line-height: 1;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-secondary);
+        }
+
+        .modal-body {
+            padding: 0 24px;
+        }
+
+        .shortcut-section {
+            margin-bottom: 24px;
+        }
+
+        .shortcut-section h4 {
+            margin: 0 0 12px 0;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .shortcut-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            gap: 12px;
+        }
+
+        .shortcut-item kbd {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            min-width: 24px;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .shortcut-item span {
+            color: var(--text-secondary);
+            font-size: 14px;
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 20px 24px 24px 24px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .modal-footer .btn {
+            width: auto;
+            padding: 10px 24px;
+            margin: 0;
+        }
+
+        /* Trip History Styles */
+        .history-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+        }
+
+        .history-item {
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .history-item:hover {
+            background: var(--border-color);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .history-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .history-route {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .history-from {
+            color: var(--text-primary);
+        }
+
+        .history-arrow {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .history-to {
+            color: var(--text-primary);
+        }
+
+        .history-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .empty-history {
+            text-align: center;
+            padding: 32px 16px;
+            color: var(--text-secondary);
         }
 
         .results-section {
@@ -872,10 +1177,15 @@
                 <h1>🚇 NYC Subway</h1>
                 <span class="live-indicator" aria-label="Live real-time data">LIVE</span>
             </div>
-            <div class="theme-toggle" role="group" aria-label="Theme selection">
-                <div class="theme-option active" onclick="setTheme('light')" role="button" tabindex="0" aria-label="Light theme">☀️</div>
-                <div class="theme-option" onclick="setTheme('dark')" role="button" tabindex="0" aria-label="Dark theme">🌙</div>
-                <div class="theme-option" onclick="setTheme('night')" role="button" tabindex="0" aria-label="Night theme">🌃</div>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <div class="theme-toggle" role="group" aria-label="Theme selection">
+                    <div class="theme-option active" onclick="setTheme('light')" role="button" tabindex="0" aria-label="Light theme">☀️</div>
+                    <div class="theme-option" onclick="setTheme('dark')" role="button" tabindex="0" aria-label="Dark theme">🌙</div>
+                    <div class="theme-option" onclick="setTheme('night')" role="button" tabindex="0" aria-label="Night theme">🌃</div>
+                </div>
+                <button class="help-button" onclick="showKeyboardHelp()" title="Keyboard shortcuts (H)" aria-label="Show keyboard shortcuts">
+                    ⌨️
+                </button>
             </div>
         </div>
     </header>
@@ -889,6 +1199,23 @@
                     <div class="empty-state">
                         <div>No favorite routes saved yet</div>
                         <div style="font-size: 14px; margin-top: 8px; opacity: 0.7;">Plan a trip and click the ⭐ to save it</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Trip History Section -->
+            <section class="history-section" id="historySection">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                    <h2 class="section-title">🕒 Recent Trips</h2>
+                    <button class="btn-secondary" onclick="tripHistory.clear()" title="Clear history">Clear</button>
+                </div>
+                <div id="tripHistoryContainer">
+                    <div class="empty-history">
+                        <div style="font-size: 24px; margin-bottom: 8px;">🕒</div>
+                        <div>No recent trips</div>
+                        <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                            Complete a trip to see it here
+                        </div>
                     </div>
                 </div>
             </section>
@@ -922,19 +1249,36 @@
                     <h2 class="section-title">🗺️ Trip Planner</h2>
 
                     <div class="input-group">
-                        <label for="fromSearch">From</label>
-                        <input type="text" id="fromSearch" placeholder="Start typing station name or line..." oninput="debounceSearch('searchFromStations')" autocomplete="off">
-                        <select id="fromStation" onchange="clearToSearch()">
-                            <option value="">Select origin...</option>
-                        </select>
+                        <label for="tripSearch">🚇 Plan a trip</label>
+                        <div class="search-dropdown-container">
+                            <input type="text" id="tripSearch" placeholder="Type 'Times Square to Union Square' or just 'Times Square' ⌨️"
+                                   oninput="handleTripSearch()"
+                                   onfocus="handleTripSearch()"
+                                   onblur="hideTripDropdown()"
+                                   onkeydown="handleTripKeydown(event)"
+                                   autocomplete="off"
+                                   style="font-size: 16px; padding: 12px;"
+                                   title="Try: 'from 14th St to Times Square' or just start typing a station name">
+                            <div class="search-dropdown" id="tripDropdown" style="display: none;">
+                                <div class="dropdown-content" id="tripDropdownContent">
+                                    <!-- Dynamic content will be inserted here -->
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="selectedFrom" value="">
+                        <input type="hidden" id="selectedTo" value="">
                     </div>
 
-                    <div class="input-group">
-                        <label for="toSearch">To</label>
-                        <input type="text" id="toSearch" placeholder="Destination station or line..." oninput="debounceSearch('searchToStations')" autocomplete="off">
-                        <select id="toStation">
-                            <option value="">Select destination...</option>
-                        </select>
+                    <div id="selectedTrip" style="display: none; margin-bottom: 16px; padding: 12px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border-color);">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <strong>🚇 Your Trip</strong>
+                            <button onclick="clearTripSelection()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px;">×</button>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px; font-size: 14px;">
+                            <div><strong>From:</strong> <span id="selectedFromName">-</span></div>
+                            <div style="color: var(--text-muted);">→</div>
+                            <div><strong>To:</strong> <span id="selectedToName">-</span></div>
+                        </div>
                     </div>
 
                     <!-- Advanced Filtering Options -->
@@ -1014,7 +1358,7 @@
                         </div>
                     </div>
 
-                    <button class="btn" onclick="planTrip()">Plan Trip</button>
+                    <button class="btn" onclick="planTrip()" id="planTripBtn">Plan Trip</button>
                 </div>
 
                 <div id="results">
@@ -1273,21 +1617,222 @@
         }
 
         function searchFromStations() {
-            const query = document.getElementById('fromSearch').value.toLowerCase();
-            filterStationSelect('fromStation', query);
+            // Legacy function - now handled by showSearchDropdown
         }
 
         function searchToStations() {
-            const query = document.getElementById('toSearch').value.toLowerCase();
-            filterStationSelect('toStation', query);
+            // Legacy function - now handled by showSearchDropdown
         }
 
         function clearToSearch() {
             const toSearch = document.getElementById('toSearch');
             if (toSearch) {
                 toSearch.value = '';
-                filterStationSelect('toStation', '');
+                document.getElementById('toStationId').value = '';
+                hideSearchDropdown('to');
             }
+        }
+
+        // New dropdown search system
+        let searchTimers = {};
+        let selectedIndex = -1;
+        let currentDropdown = null;
+
+        function showSearchDropdown(type) {
+            clearTimeout(searchTimers[type]);
+            searchTimers[type] = setTimeout(() => {
+                const input = document.getElementById(`${type}Search`);
+                const dropdown = document.getElementById(`${type}Dropdown`);
+                const content = document.getElementById(`${type}DropdownContent`);
+                const query = input.value.trim();
+
+                if (query.length < 1) {
+                    // Show recent searches when no query
+                    renderRecentSearches(type, content);
+                    dropdown.style.display = 'block';
+                    currentDropdown = type;
+                } else if (query.length >= 2) {
+                    // Show search results
+                    renderSearchResults(type, query, content);
+                    dropdown.style.display = 'block';
+                    currentDropdown = type;
+                } else {
+                    dropdown.style.display = 'none';
+                    currentDropdown = null;
+                }
+                selectedIndex = -1;
+            }, 150);
+        }
+
+        function hideSearchDropdown(type) {
+            setTimeout(() => {
+                const dropdown = document.getElementById(`${type}Dropdown`);
+                dropdown.style.display = 'none';
+                if (currentDropdown === type) {
+                    currentDropdown = null;
+                    selectedIndex = -1;
+                }
+            }, 200); // Delay to allow clicks on dropdown items
+        }
+
+        function renderRecentSearches(type, container) {
+            const recentSearches = tripHistory.getRecentSearches();
+            let html = '';
+
+            if (recentSearches.length > 0) {
+                html += '<div class="dropdown-group-header">Recent Searches</div>';
+                recentSearches.slice(0, 5).forEach((search, index) => {
+                    if (search.stationId && search.stationName) {
+                        html += `
+                            <div class="dropdown-item recent" onclick="selectStation('${type}', '${search.stationId}', '${search.stationName}')">
+                                <div class="dropdown-item-main">
+                                    <div class="dropdown-item-name">🕒 ${search.stationName}</div>
+                                </div>
+                                <div class="dropdown-item-meta">Recent</div>
+                            </div>
+                        `;
+                    }
+                });
+            }
+
+            // Show popular stations if no recent searches
+            if (recentSearches.length === 0) {
+                html += '<div class="dropdown-group-header">Popular Stations</div>';
+                const popularStations = ['Times Sq-42 St', '14 St-Union Sq', 'Grand Central-42 St', 'Herald Sq-34 St'];
+                allStations.filter(s => popularStations.includes(s.name)).forEach(station => {
+                    html += `
+                        <div class="dropdown-item" onclick="selectStation('${type}', '${station.id}', '${station.name}')">
+                            <div class="dropdown-item-main">
+                                <div class="dropdown-item-name">${station.name}</div>
+                                <div class="dropdown-item-lines">${station.lines.join(' ')}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            container.innerHTML = html;
+        }
+
+        function renderSearchResults(type, query, container) {
+            // Add to recent searches
+            tripHistory.addSearch(query);
+
+            // Get suggestions from recent searches
+            const suggestions = tripHistory.getSuggestions(query);
+
+            // Get matching stations from allStations
+            const stationMatches = allStations
+                .filter(station =>
+                    station.name.toLowerCase().includes(query.toLowerCase()) ||
+                    station.lines.some(line => line.toLowerCase().includes(query.toLowerCase()))
+                )
+                .slice(0, 8);
+
+            let html = '';
+
+            // Add recent suggestions first
+            if (suggestions.length > 0) {
+                html += '<div class="dropdown-group-header">Recent Searches</div>';
+                suggestions.forEach(suggestion => {
+                    if (suggestion.stationId) {
+                        html += `
+                            <div class="dropdown-item recent" onclick="selectStation('${type}', '${suggestion.stationId}', '${suggestion.text}')">
+                                <div class="dropdown-item-main">
+                                    <div class="dropdown-item-name">🕒 ${suggestion.text}</div>
+                                </div>
+                                <div class="dropdown-item-meta">Recent</div>
+                            </div>
+                        `;
+                    }
+                });
+            }
+
+            // Add station matches
+            if (stationMatches.length > 0) {
+                if (suggestions.length > 0) {
+                    html += '<div class="dropdown-group-header">Stations</div>';
+                }
+                stationMatches.forEach(station => {
+                    html += `
+                        <div class="dropdown-item" onclick="selectStation('${type}', '${station.id}', '${station.name}')">
+                            <div class="dropdown-item-main">
+                                <div class="dropdown-item-name">${station.name}</div>
+                                <div class="dropdown-item-lines">${station.lines.join(' ')}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            if (html === '') {
+                html = '<div class="dropdown-item" style="cursor: default; opacity: 0.6;">No stations found</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        function selectStation(type, stationId, stationName) {
+            const input = document.getElementById(`${type}Search`);
+            const hiddenInput = document.getElementById(`${type}StationId`);
+            const dropdown = document.getElementById(`${type}Dropdown`);
+
+            input.value = stationName;
+            hiddenInput.value = stationId;
+            dropdown.style.display = 'none';
+            currentDropdown = null;
+
+            // Save to recent searches
+            tripHistory.addSearch(stationName, stationId, stationName);
+
+            // Clear the other search if this is the from field
+            if (type === 'from') {
+                clearToSearch();
+            }
+        }
+
+        function handleDropdownKeydown(event, type) {
+            const dropdown = document.getElementById(`${type}Dropdown`);
+            if (dropdown.style.display === 'none') return;
+
+            const items = dropdown.querySelectorAll('.dropdown-item:not(.dropdown-group-header)');
+
+            switch (event.key) {
+                case 'ArrowDown':
+                    event.preventDefault();
+                    selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                    updateSelection(items);
+                    break;
+
+                case 'ArrowUp':
+                    event.preventDefault();
+                    selectedIndex = Math.max(selectedIndex - 1, 0);
+                    updateSelection(items);
+                    break;
+
+                case 'Enter':
+                    event.preventDefault();
+                    if (selectedIndex >= 0 && items[selectedIndex]) {
+                        items[selectedIndex].click();
+                    }
+                    break;
+
+                case 'Escape':
+                    event.preventDefault();
+                    hideSearchDropdown(type);
+                    break;
+            }
+        }
+
+        function updateSelection(items) {
+            items.forEach((item, index) => {
+                if (index === selectedIndex) {
+                    item.classList.add('selected');
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
         }
 
         function filterStationSelect(selectId, query) {
@@ -1352,6 +1897,200 @@
                 option.disabled = true;
                 select.appendChild(option);
             }
+        }
+
+        // NEW SINGLE SEARCH INTERFACE FUNCTIONS
+        function handleTripSearch() {
+            const input = document.getElementById('tripSearch');
+            const dropdown = document.getElementById('tripDropdown');
+            const content = document.getElementById('tripDropdownContent');
+            const query = input.value.trim();
+
+            if (!query || query.length < 2) {
+                dropdown.style.display = 'none';
+                return;
+            }
+
+            // Parse natural language input
+            let html = '';
+            const fromToMatch = query.match(/from\s+(.+?)\s+to\s+(.+)/i);
+
+            if (fromToMatch) {
+                // Handle "from X to Y" format
+                const fromStation = fromToMatch[1].trim();
+                const toStation = fromToMatch[2].trim();
+                html += `<div class="dropdown-group-header">Trip: ${fromStation} → ${toStation}</div>`;
+
+                const fromResults = searchStations(fromStation);
+                const toResults = searchStations(toStation);
+
+                if (fromResults.length > 0 && toResults.length > 0) {
+                    html += `<div class="dropdown-item" onclick="selectTrip('${fromResults[0].id}', '${fromResults[0].name}', '${toResults[0].id}', '${toResults[0].name}')">
+                        <div class="dropdown-item-main">
+                            <div class="dropdown-item-name">🚇 ${fromResults[0].name} → ${toResults[0].name}</div>
+                        </div>
+                    </div>`;
+                }
+            } else {
+                // Show station suggestions for single input
+                html += '<div class="dropdown-group-header">💡 Smart suggestions</div>';
+
+                // Check if input looks like it might be starting a "from X to Y" phrase
+                if (query.toLowerCase().startsWith('from ') && !query.includes(' to ')) {
+                    const fromPart = query.substring(5).trim();
+                    if (fromPart) {
+                        const results = searchStations(fromPart);
+                        if (results.length > 0) {
+                            html += `<div class="dropdown-item" onclick="selectStartingStation('${results[0].id}', '${results[0].name}')">
+                                <div class="dropdown-item-main">
+                                    <div class="dropdown-item-name">🚇 From ${results[0].name} to...</div>
+                                    <div class="dropdown-item-lines">Continue typing destination</div>
+                                </div>
+                            </div>`;
+                        }
+                    }
+                } else {
+                    // Regular station search
+                    const results = searchStations(query);
+                    if (results.length > 0) {
+                        html += `<div class="dropdown-item" onclick="selectStartingStation('${results[0].id}', '${results[0].name}')">
+                            <div class="dropdown-item-main">
+                                <div class="dropdown-item-name">📍 Start from ${results[0].name}</div>
+                                <div class="dropdown-item-lines">${results[0].lines.join(' ')}</div>
+                            </div>
+                        </div>`;
+
+                        // Show more suggestions
+                        results.slice(1, 4).forEach(station => {
+                            html += `<div class="dropdown-item" onclick="selectStartingStation('${station.id}', '${station.name}')">
+                                <div class="dropdown-item-main">
+                                    <div class="dropdown-item-name">${station.name}</div>
+                                    <div class="dropdown-item-lines">${station.lines.join(' ')}</div>
+                                </div>
+                            </div>`;
+                        });
+                    }
+                }
+
+                // Add helpful hint if no good results
+                if (html === '<div class="dropdown-group-header">💡 Smart suggestions</div>') {
+                    html += `<div class="dropdown-item" style="opacity: 0.6; cursor: default;">
+                        <div class="dropdown-item-main">
+                            <div class="dropdown-item-name">💡 Try typing station names like:</div>
+                            <div class="dropdown-item-lines">"Times Square", "Union Square", or "14th St"</div>
+                        </div>
+                    </div>`;
+                }
+            }
+
+            content.innerHTML = html;
+            dropdown.style.display = 'block';
+            tripSelectedIndex = -1; // Reset selection
+        }
+
+        function selectTrip(fromId, fromName, toId, toName) {
+            document.getElementById('selectedFrom').value = fromId;
+            document.getElementById('selectedTo').value = toId;
+            document.getElementById('selectedFromName').textContent = fromName;
+            document.getElementById('selectedToName').textContent = toName;
+            document.getElementById('selectedTrip').style.display = 'block';
+            document.getElementById('tripSearch').value = `${fromName} to ${toName}`;
+            hideTripDropdown();
+        }
+
+        function selectStartingStation(stationId, stationName) {
+            document.getElementById('tripSearch').value = `from ${stationName} to `;
+            document.getElementById('tripSearch').focus();
+            // Move cursor to the end
+            const input = document.getElementById('tripSearch');
+            input.setSelectionRange(input.value.length, input.value.length);
+            hideTripDropdown();
+        }
+
+        function clearTripSelection() {
+            document.getElementById('selectedFrom').value = '';
+            document.getElementById('selectedTo').value = '';
+            document.getElementById('selectedTrip').style.display = 'none';
+            document.getElementById('tripSearch').value = '';
+        }
+
+        function hideTripDropdown() {
+            setTimeout(() => {
+                document.getElementById('tripDropdown').style.display = 'none';
+            }, 200);
+        }
+
+        function handleTripKeydown(event) {
+            const dropdown = document.getElementById('tripDropdown');
+            const items = dropdown.querySelectorAll('.dropdown-item[onclick]');
+
+            switch (event.key) {
+                case 'ArrowDown':
+                    event.preventDefault();
+                    if (tripSelectedIndex < items.length - 1) tripSelectedIndex++;
+                    updateTripSelection(items);
+                    break;
+
+                case 'ArrowUp':
+                    event.preventDefault();
+                    if (tripSelectedIndex > 0) tripSelectedIndex--;
+                    updateTripSelection(items);
+                    break;
+
+                case 'Enter':
+                    event.preventDefault();
+                    if (tripSelectedIndex >= 0 && items[tripSelectedIndex]) {
+                        items[tripSelectedIndex].click();
+                    }
+                    break;
+
+                case 'Escape':
+                    hideTripDropdown();
+                    break;
+            }
+        }
+
+        let tripSelectedIndex = -1;
+
+        function updateTripSelection(items) {
+            items.forEach((item, index) => {
+                if (index === tripSelectedIndex) {
+                    item.classList.add('selected');
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
+        }
+
+        function searchStations(query) {
+            if (!allStations || !query) return [];
+            const queryLower = query.toLowerCase();
+
+            // Quick shortcuts for common stations
+            const shortcuts = {
+                'times': 'Times Sq',
+                'union': 'Union Sq',
+                'grand': 'Grand Central',
+                'penn': 'Penn Station',
+                'atlantic': 'Atlantic Av',
+                'jay': 'Jay St',
+                'dekalb': 'DeKalb Av'
+            };
+
+            let searchQuery = queryLower;
+            for (const [shortcut, fullName] of Object.entries(shortcuts)) {
+                if (queryLower.includes(shortcut)) {
+                    searchQuery = fullName.toLowerCase();
+                    break;
+                }
+            }
+
+            return allStations.filter(station =>
+                station.name.toLowerCase().includes(searchQuery) ||
+                station.name.toLowerCase().includes(queryLower) ||
+                station.lines.some(line => line.toLowerCase().includes(queryLower))
+            ).slice(0, 10);
         }
 
         // Select station from map
@@ -1646,13 +2385,460 @@
             });
         }
 
+        // Keyboard shortcuts system for power users
+        const keyboardShortcuts = {
+            // Global shortcuts (work anywhere)
+            global: {
+                'KeyT': () => planTrip(), // Plan Trip
+                'KeyF': () => document.getElementById('fromSearch').focus(), // Focus From field
+                'KeyD': () => document.getElementById('toSearch').focus(), // Focus Destination field
+                'KeyR': () => location.reload(), // Refresh page
+                'KeyH': () => showKeyboardHelp(), // Show help
+                'Digit1': () => setTheme('light'), // Light theme
+                'Digit2': () => setTheme('dark'), // Dark theme
+                'Digit3': () => setTheme('night'), // Night theme
+                'KeyS': () => favorites.toggle(), // Show/hide favorites
+                'KeyG': () => toggleFilters(), // Toggle filters
+                'KeyC': () => clearAllSelections(), // Clear selections
+                'Escape': () => closeModals(), // Close modals/overlays
+            },
+
+            // Context-specific shortcuts (only when input fields are focused)
+            input: {
+                'Enter': (event) => {
+                    if (event.target.id === 'fromSearch' || event.target.id === 'toSearch') {
+                        planTrip();
+                    }
+                },
+                'Tab': (event) => {
+                    // Enhanced tab navigation between form elements
+                    if (event.target.id === 'fromSearch') {
+                        event.preventDefault();
+                        document.getElementById('toSearch').focus();
+                    }
+                }
+            }
+        };
+
+        function initializeKeyboardShortcuts() {
+            document.addEventListener('keydown', (event) => {
+                // Don't trigger shortcuts if user is typing in input fields (except for specific input shortcuts)
+                if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+                    // Handle input-specific shortcuts
+                    if (keyboardShortcuts.input[event.code]) {
+                        keyboardShortcuts.input[event.code](event);
+                    }
+                    return;
+                }
+
+                // Handle global shortcuts with modifiers
+                if (event.ctrlKey || event.metaKey || event.altKey) {
+                    switch (true) {
+                        case (event.ctrlKey && event.key === 'k'): // Ctrl+K: Quick search
+                            event.preventDefault();
+                            document.getElementById('fromSearch').focus();
+                            break;
+                        case (event.ctrlKey && event.key === '/'): // Ctrl+/: Show help
+                            event.preventDefault();
+                            showKeyboardHelp();
+                            break;
+                        case (event.ctrlKey && event.shiftKey && event.key === 'F'): // Ctrl+Shift+F: Toggle favorites
+                            event.preventDefault();
+                            favorites.toggle();
+                            break;
+                    }
+                    return;
+                }
+
+                // Handle single-key global shortcuts
+                if (keyboardShortcuts.global[event.code]) {
+                    event.preventDefault();
+                    keyboardShortcuts.global[event.code]();
+                }
+            });
+        }
+
+        function clearAllSelections() {
+            document.getElementById('fromStationId').value = '';
+            document.getElementById('toStationId').value = '';
+            document.getElementById('fromSearch').value = '';
+            document.getElementById('toSearch').value = '';
+            hideSearchDropdown('from');
+            hideSearchDropdown('to');
+            document.getElementById('results').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🗺️</div>
+                    <div>Select a station to see live arrivals<br>or plan your trip above</div>
+                </div>
+            `;
+            clearRouteHighlighting();
+        }
+
+        function closeModals() {
+            // Close any open modals or overlays
+            const helpModal = document.getElementById('keyboardHelpModal');
+            if (helpModal && helpModal.style.display !== 'none') {
+                hideKeyboardHelp();
+            }
+
+            // Collapse filter panel if expanded
+            const filterContent = document.getElementById('filterContent');
+            if (filterContent && filterContent.classList.contains('expanded')) {
+                toggleFilters();
+            }
+        }
+
+        function showKeyboardHelp() {
+            // Create or show keyboard help modal
+            let modal = document.getElementById('keyboardHelpModal');
+
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'keyboardHelpModal';
+                modal.className = 'keyboard-help-modal';
+                modal.innerHTML = `
+                    <div class="modal-overlay" onclick="hideKeyboardHelp()"></div>
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>⌨️ Keyboard Shortcuts</h3>
+                            <button class="modal-close" onclick="hideKeyboardHelp()">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="shortcut-section">
+                                <h4>🚀 Quick Actions</h4>
+                                <div class="shortcut-item">
+                                    <kbd>T</kbd> <span>Plan trip with current selections</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>F</kbd> <span>Focus "From" station field</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>D</kbd> <span>Focus "To" destination field</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>C</kbd> <span>Clear all selections</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>R</kbd> <span>Refresh page</span>
+                                </div>
+                            </div>
+
+                            <div class="shortcut-section">
+                                <h4>🎨 Themes & UI</h4>
+                                <div class="shortcut-item">
+                                    <kbd>1</kbd> <span>Light theme</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>2</kbd> <span>Dark theme</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>3</kbd> <span>Night theme</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>S</kbd> <span>Toggle favorites panel</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>G</kbd> <span>Toggle route filters</span>
+                                </div>
+                            </div>
+
+                            <div class="shortcut-section">
+                                <h4>🔧 Advanced</h4>
+                                <div class="shortcut-item">
+                                    <kbd>Ctrl</kbd> + <kbd>K</kbd> <span>Quick search (focus from field)</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>Ctrl</kbd> + <kbd>/</kbd> <span>Show this help</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd> <span>Toggle favorites</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>Esc</kbd> <span>Close modals/overlays</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>Enter</kbd> <span>Plan trip (when in input field)</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn" onclick="hideKeyboardHelp()">Got it!</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+
+            modal.style.display = 'flex';
+            // Focus the modal for accessibility
+            modal.querySelector('.modal-content').focus();
+        }
+
+        function hideKeyboardHelp() {
+            const modal = document.getElementById('keyboardHelpModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Trip History and Recent Searches System
+        const tripHistory = {
+            maxItems: 20,
+            maxRecentSearches: 10,
+
+            // Get all trip history from localStorage
+            getAll: function() {
+                try {
+                    return JSON.parse(localStorage.getItem('tripHistory') || '[]');
+                } catch (e) {
+                    console.warn('Could not load trip history:', e);
+                    return [];
+                }
+            },
+
+            // Add a completed trip to history
+            addTrip: function(from, to, fromName, toName, timestamp = Date.now()) {
+                const trips = this.getAll();
+                const trip = {
+                    id: `${from}-${to}-${timestamp}`,
+                    from,
+                    to,
+                    fromName,
+                    toName,
+                    timestamp,
+                    frequency: 1
+                };
+
+                // Check if this route already exists
+                const existingIndex = trips.findIndex(t => t.from === from && t.to === to);
+                if (existingIndex >= 0) {
+                    // Update frequency and timestamp
+                    trips[existingIndex].frequency += 1;
+                    trips[existingIndex].timestamp = timestamp;
+                    trips[existingIndex].fromName = fromName; // Update in case station name changed
+                    trips[existingIndex].toName = toName;
+                } else {
+                    // Add new trip
+                    trips.unshift(trip);
+                }
+
+                // Keep only the most recent trips
+                trips.splice(this.maxItems);
+
+                localStorage.setItem('tripHistory', JSON.stringify(trips));
+                this.renderHistory();
+            },
+
+            // Get recent searches for autocomplete
+            getRecentSearches: function() {
+                try {
+                    return JSON.parse(localStorage.getItem('recentSearches') || '[]');
+                } catch (e) {
+                    console.warn('Could not load recent searches:', e);
+                    return [];
+                }
+            },
+
+            // Add a search term to recent searches
+            addSearch: function(query, stationId = null, stationName = null) {
+                if (!query || query.length < 2) return;
+
+                const searches = this.getRecentSearches();
+                const search = {
+                    query: query.toLowerCase(),
+                    stationId,
+                    stationName,
+                    timestamp: Date.now()
+                };
+
+                // Remove existing search for this query
+                const filtered = searches.filter(s => s.query !== search.query);
+
+                // Add to beginning
+                filtered.unshift(search);
+
+                // Keep only recent searches
+                filtered.splice(this.maxRecentSearches);
+
+                localStorage.setItem('recentSearches', JSON.stringify(filtered));
+            },
+
+            // Get search suggestions based on query
+            getSuggestions: function(query) {
+                if (!query || query.length < 2) return [];
+
+                const searches = this.getRecentSearches();
+                const lowerQuery = query.toLowerCase();
+
+                return searches
+                    .filter(search => search.query.includes(lowerQuery))
+                    .slice(0, 5)
+                    .map(search => ({
+                        text: search.stationName || search.query,
+                        stationId: search.stationId,
+                        type: 'recent'
+                    }));
+            },
+
+            // Render trip history panel
+            renderHistory: function() {
+                const trips = this.getAll()
+                    .sort((a, b) => b.timestamp - a.timestamp)
+                    .slice(0, 10);
+
+                const container = document.getElementById('tripHistoryContainer');
+                if (!container) return;
+
+                if (trips.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-history">
+                            <div style="font-size: 24px; margin-bottom: 8px;">🕒</div>
+                            <div>No recent trips</div>
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+                                Complete a trip to see it here
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const html = trips.map(trip => {
+                    const timeAgo = this.getTimeAgo(trip.timestamp);
+                    const frequencyText = trip.frequency > 1 ? ` • ${trip.frequency}x` : '';
+
+                    return `
+                        <div class="history-item" onclick="loadTripFromHistory('${trip.from}', '${trip.to}', '${trip.fromName}', '${trip.toName}')">
+                            <div class="history-route">
+                                <span class="history-from">${trip.fromName}</span>
+                                <span class="history-arrow">→</span>
+                                <span class="history-to">${trip.toName}</span>
+                            </div>
+                            <div class="history-meta">
+                                ${timeAgo}${frequencyText}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = html;
+            },
+
+            // Get human-readable time difference
+            getTimeAgo: function(timestamp) {
+                const now = Date.now();
+                const diff = now - timestamp;
+                const minutes = Math.floor(diff / 60000);
+                const hours = Math.floor(diff / 3600000);
+                const days = Math.floor(diff / 86400000);
+
+                if (minutes < 1) return 'Just now';
+                if (minutes < 60) return `${minutes}m ago`;
+                if (hours < 24) return `${hours}h ago`;
+                if (days < 7) return `${days}d ago`;
+                return new Date(timestamp).toLocaleDateString();
+            },
+
+            // Clear all history
+            clear: function() {
+                localStorage.removeItem('tripHistory');
+                localStorage.removeItem('recentSearches');
+                this.renderHistory();
+            }
+        };
+
+        // Load trip from history
+        function loadTripFromHistory(fromId, toId, fromName, toName) {
+            // Set the hidden inputs
+            document.getElementById('fromStationId').value = fromId;
+            document.getElementById('toStationId').value = toId;
+
+            // Set the search inputs
+            document.getElementById('fromSearch').value = fromName;
+            document.getElementById('toSearch').value = toName;
+
+            // Hide any open dropdowns
+            hideSearchDropdown('from');
+            hideSearchDropdown('to');
+
+            // Plan the trip
+            planTrip();
+        }
+
+        // Enhanced search with recent suggestions
+        function enhancedSearch(inputId, targetSelectId) {
+            const input = document.getElementById(inputId);
+            const query = input.value.trim();
+
+            if (query.length < 2) {
+                document.getElementById(targetSelectId).innerHTML = '<option value="">Type to search...</option>';
+                return;
+            }
+
+            // Add to recent searches
+            tripHistory.addSearch(query);
+
+            // Get suggestions from recent searches
+            const suggestions = tripHistory.getSuggestions(query);
+
+            // Get matching stations from allStations
+            const stationMatches = allStations
+                .filter(station =>
+                    station.name.toLowerCase().includes(query.toLowerCase()) ||
+                    station.lines.some(line => line.toLowerCase().includes(query.toLowerCase()))
+                )
+                .slice(0, 8);
+
+            // Combine suggestions and station matches
+            const select = document.getElementById(targetSelectId);
+            let options = '<option value="">Select station...</option>';
+
+            // Add recent suggestions first
+            if (suggestions.length > 0) {
+                options += '<optgroup label="Recent Searches">';
+                suggestions.forEach(suggestion => {
+                    if (suggestion.stationId) {
+                        options += `<option value="${suggestion.stationId}">🕒 ${suggestion.text}</option>`;
+                    }
+                });
+                options += '</optgroup>';
+            }
+
+            // Add station matches
+            if (stationMatches.length > 0) {
+                if (suggestions.length > 0) {
+                    options += '<optgroup label="Stations">';
+                }
+                stationMatches.forEach(station => {
+                    const lines = station.lines.join(' ');
+                    options += `<option value="${station.id}">${station.name} (${lines})</option>`;
+                });
+                if (suggestions.length > 0) {
+                    options += '</optgroup>';
+                }
+            }
+
+            select.innerHTML = options;
+        }
+
+        // Save station selection to recent searches
+        function saveStationSelection(selectId) {
+            const select = document.getElementById(selectId);
+            const stationId = select.value;
+            if (!stationId) return;
+
+            const station = allStations.find(s => s.id === stationId);
+            if (station) {
+                tripHistory.addSearch(station.name, stationId, station.name);
+            }
+        }
+
         // Plan trip with filters
         async function planTrip() {
             // Clear any existing route highlighting
             clearRouteHighlighting();
 
-            const fromId = document.getElementById('fromStation').value;
-            const toId = document.getElementById('toStation').value;
+            const fromId = document.getElementById('selectedFrom').value;
+            const toId = document.getElementById('selectedTo').value;
 
             if (!fromId || !toId) {
                 alert('Please select both from and to stations');
@@ -1732,6 +2918,9 @@
 
                     html += '</div>';
                     document.getElementById('results').innerHTML = html;
+
+                    // Add to trip history
+                    tripHistory.addTrip(fromId, toId, fromStation.name, toStation.name);
                 } else {
                     const error = await response.json();
                     document.getElementById('results').innerHTML = `<div style="text-align: center; padding: 20px; color: #dc3545;">${error.detail || 'No route found'}</div>`;
@@ -1943,6 +3132,12 @@
             // Initialize filtering system
             initializeLineChips();
             loadFilterPrefs();
+
+            // Initialize keyboard shortcuts
+            initializeKeyboardShortcuts();
+
+            // Initialize trip history
+            tripHistory.renderHistory();
 
             // Load route from URL if parameters exist
             setTimeout(() => {
