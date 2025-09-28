@@ -1249,14 +1249,16 @@
                     <h2 class="section-title">🗺️ Trip Planner</h2>
 
                     <div class="input-group">
-                        <label for="tripSearch">Plan a trip</label>
+                        <label for="tripSearch">🚇 Plan a trip</label>
                         <div class="search-dropdown-container">
-                            <input type="text" id="tripSearch" placeholder="Type 'from Times Square to Union Square' or just 'Times Square'"
+                            <input type="text" id="tripSearch" placeholder="Type 'Times Square to Union Square' or just 'Times Square' ⌨️"
                                    oninput="handleTripSearch()"
                                    onfocus="handleTripSearch()"
                                    onblur="hideTripDropdown()"
                                    onkeydown="handleTripKeydown(event)"
-                                   autocomplete="off">
+                                   autocomplete="off"
+                                   style="font-size: 16px; padding: 12px;"
+                                   title="Try: 'from 14th St to Times Square' or just start typing a station name">
                             <div class="search-dropdown" id="tripDropdown" style="display: none;">
                                 <div class="dropdown-content" id="tripDropdownContent">
                                     <!-- Dynamic content will be inserted here -->
@@ -1931,16 +1933,54 @@
                 }
             } else {
                 // Show station suggestions for single input
-                html += '<div class="dropdown-group-header">Select starting station</div>';
-                const results = searchStations(query);
-                results.slice(0, 5).forEach(station => {
-                    html += `<div class="dropdown-item" onclick="selectStartingStation('${station.id}', '${station.name}')">
+                html += '<div class="dropdown-group-header">💡 Smart suggestions</div>';
+
+                // Check if input looks like it might be starting a "from X to Y" phrase
+                if (query.toLowerCase().startsWith('from ') && !query.includes(' to ')) {
+                    const fromPart = query.substring(5).trim();
+                    if (fromPart) {
+                        const results = searchStations(fromPart);
+                        if (results.length > 0) {
+                            html += `<div class="dropdown-item" onclick="selectStartingStation('${results[0].id}', '${results[0].name}')">
+                                <div class="dropdown-item-main">
+                                    <div class="dropdown-item-name">🚇 From ${results[0].name} to...</div>
+                                    <div class="dropdown-item-lines">Continue typing destination</div>
+                                </div>
+                            </div>`;
+                        }
+                    }
+                } else {
+                    // Regular station search
+                    const results = searchStations(query);
+                    if (results.length > 0) {
+                        html += `<div class="dropdown-item" onclick="selectStartingStation('${results[0].id}', '${results[0].name}')">
+                            <div class="dropdown-item-main">
+                                <div class="dropdown-item-name">📍 Start from ${results[0].name}</div>
+                                <div class="dropdown-item-lines">${results[0].lines.join(' ')}</div>
+                            </div>
+                        </div>`;
+
+                        // Show more suggestions
+                        results.slice(1, 4).forEach(station => {
+                            html += `<div class="dropdown-item" onclick="selectStartingStation('${station.id}', '${station.name}')">
+                                <div class="dropdown-item-main">
+                                    <div class="dropdown-item-name">${station.name}</div>
+                                    <div class="dropdown-item-lines">${station.lines.join(' ')}</div>
+                                </div>
+                            </div>`;
+                        });
+                    }
+                }
+
+                // Add helpful hint if no good results
+                if (html === '<div class="dropdown-group-header">💡 Smart suggestions</div>') {
+                    html += `<div class="dropdown-item" style="opacity: 0.6; cursor: default;">
                         <div class="dropdown-item-main">
-                            <div class="dropdown-item-name">${station.name}</div>
-                            <div class="dropdown-item-lines">${station.lines.join(' ')}</div>
+                            <div class="dropdown-item-name">💡 Try typing station names like:</div>
+                            <div class="dropdown-item-lines">"Times Square", "Union Square", or "14th St"</div>
                         </div>
                     </div>`;
-                });
+                }
             }
 
             content.innerHTML = html;
