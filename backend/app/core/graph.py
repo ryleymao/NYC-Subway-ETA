@@ -148,11 +148,49 @@ class StationGraphBuilder:
                     })
                     count += 1
 
-        # 2. TODO: Add implicit transfers between nearby stops
+        # 2. Add intra-station transfers (platform-to-platform within same station)
+        intra_station_count = self._build_intra_station_transfers(db)
+        count += intra_station_count
+        logger.info(f"Built {intra_station_count} intra-station transfers")
+
+        # 3. TODO: Add implicit transfers between nearby stops
         # This would involve finding stops within walking distance
         # and creating transfer connections between them
 
         logger.info(f"Built {count} transfer connections")
+        return count
+
+    def _build_intra_station_transfers(self, db: Session) -> int:
+        """Build transfers between different platforms at the same station"""
+        logger.info("Building intra-station transfers (platform-to-platform)...")
+
+        # Get all unique base station IDs
+        from app.models.models import Stop
+        base_stations = db.query(Stop.stop_id).distinct().all()
+        count = 0
+
+        for (base_id,) in base_stations:
+            # Find all directional platforms for this station
+            platforms = []
+            for direction in ['N', 'S', 'E', 'W']:
+                platform_id = f"{base_id}{direction}"
+                if platform_id in self.graph:
+                    platforms.append(platform_id)
+
+            # Create bidirectional transfers between all platforms at this station
+            for i, from_platform in enumerate(platforms):
+                for j, to_platform in enumerate(platforms):
+                    if i != j:  # Don't transfer to yourself
+                        # Platform-to-platform transfer (e.g., 106N -> 106S)
+                        self.graph[from_platform][to_platform].append({
+                            'route_id': 'PLATFORM_TRANSFER',
+                            'travel_time': 0,
+                            'is_transfer': True,
+                            'transfer_penalty': 120  # 2 minutes to change platforms
+                        })
+                        count += 1
+
+        logger.info(f"Built {count} intra-station platform transfers")
         return count
 
     def _save_graph_to_db(self, db: Session):

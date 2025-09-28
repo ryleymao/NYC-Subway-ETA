@@ -91,6 +91,13 @@ class RoutePlanner:
                 if from_dir == to_dir:
                     continue
 
+                # For platform transfers within same station, allow if different directions
+                base_from = from_dir.rstrip('NSEW')
+                base_to = to_dir.rstrip('NSEW')
+                if base_from == base_to and from_dir != to_dir:
+                    # This is a platform transfer - allow it but process specially
+                    pass
+
                 logger.info(f"Trying route from {from_dir} to {to_dir}")
                 path = self._dijkstra(from_dir, to_dir, max_transfers)
 
@@ -330,6 +337,10 @@ class RoutePlanner:
         if route_id == 'TRANSFER':
             transfer_time = board_in_s // 60
             return f"Transfer to another line ({transfer_time} min walk)"
+
+        if route_id == 'PLATFORM_TRANSFER':
+            transfer_time = board_in_s // 60
+            return f"Change platforms at {from_name} ({transfer_time} min walk)"
 
         # Format times
         wait_min = board_in_s // 60
