@@ -1284,7 +1284,10 @@
                         <div class="results-section">
                             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
                                 <h3 class="section-title">🗺️ ${fromStation.name} → ${toStation.name}</h3>
-                                <button class="favorite-btn" onclick="addToFavorites('${fromId}', '${toId}', '${fromStation.name}', '${toStation.name}')" title="Save to favorites">⭐</button>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="favorite-btn" onclick="shareRoute('${fromId}', '${toId}', '${fromStation.name}', '${toStation.name}')" title="Share route">🔗</button>
+                                    <button class="favorite-btn" onclick="addToFavorites('${fromId}', '${toId}', '${fromStation.name}', '${toStation.name}')" title="Save to favorites">⭐</button>
+                                </div>
                             </div>
                             <p style="margin-bottom: 16px; color: #6b7280; font-size: 14px;">Total time: ${Math.floor(route.total_eta_s / 60)} minutes • ${route.transfers} transfer${route.transfers !== 1 ? 's' : ''}</p>
                     `;
@@ -1398,12 +1401,69 @@
             });
         }
 
+        // URL sharing functionality
+        function shareRoute(fromId, toId, fromName, toName) {
+            const url = new URL(window.location);
+            url.searchParams.set('from', fromId);
+            url.searchParams.set('to', toId);
+            url.searchParams.set('fromName', fromName);
+            url.searchParams.set('toName', toName);
+
+            if (navigator.share) {
+                navigator.share({
+                    title: `NYC Subway Route: ${fromName} → ${toName}`,
+                    text: `Check out this subway route from ${fromName} to ${toName}`,
+                    url: url.toString()
+                });
+            } else {
+                navigator.clipboard.writeText(url.toString()).then(() => {
+                    showToast('Route link copied to clipboard! 📋');
+                });
+            }
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed; top: 20px; right: 20px; z-index: 10000;
+                background: var(--accent-color); color: white; padding: 12px 24px;
+                border-radius: 8px; font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                transform: translateX(100%); transition: transform 0.3s ease;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => toast.style.transform = 'translateX(0)', 100);
+            setTimeout(() => {
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 3000);
+        }
+
+        // Load route from URL parameters
+        function loadRouteFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const fromId = params.get('from');
+            const toId = params.get('to');
+
+            if (fromId && toId) {
+                document.getElementById('fromStation').value = fromId;
+                document.getElementById('toStation').value = toId;
+                planTrip();
+            }
+        }
+
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
             loadTheme();
             loadStations();
             updateNetworkStatus();
             favorites.render();
+
+            // Load route from URL if parameters exist
+            setTimeout(() => {
+                loadRouteFromURL();
+            }, 1000); // Wait for stations to load
 
             // Listen for network status changes
             window.addEventListener('online', updateNetworkStatus);
