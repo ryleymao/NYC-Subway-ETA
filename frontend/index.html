@@ -277,11 +277,28 @@
             border-left: 4px solid #059669;
             transition: all 0.3s ease;
             cursor: pointer;
+            touch-action: manipulation;
+            min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .route-step:hover {
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Mobile-specific touch interactions */
+        @media (hover: none) and (pointer: coarse) {
+            .route-step:hover {
+                transform: none;
+                box-shadow: none;
+            }
+
+            .route-step:active {
+                background: var(--bg-secondary);
+                transform: scale(0.98);
+                border-left-color: var(--accent-color);
+            }
         }
 
         .transfer-step {
@@ -356,6 +373,166 @@
             font-size: 14px;
         }
 
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            border-top-color: var(--accent-color);
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 20px;
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.2);
+            border-radius: 8px;
+            color: #dc3545;
+            margin: 16px 0;
+        }
+
+        .error-message button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            margin-top: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .error-message button:hover {
+            background: #c82333;
+        }
+
+        .offline-banner {
+            background: #ffc107;
+            color: #212529;
+            text-align: center;
+            padding: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        /* Mobile responsiveness and touch enhancements */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 16px;
+                align-items: stretch;
+            }
+
+            .theme-toggle {
+                align-self: center;
+            }
+
+            .content {
+                padding: 16px;
+            }
+
+            .main-sections {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .input-group {
+                margin-bottom: 20px;
+            }
+
+            .input-group input,
+            .input-group select {
+                font-size: 16px;
+                padding: 16px 12px;
+                min-height: 44px;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .button-group {
+                gap: 12px;
+            }
+
+            .button-group button {
+                padding: 16px 24px;
+                font-size: 16px;
+                min-height: 44px;
+                flex: 1;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .arrival-item {
+                padding: 16px 12px;
+                min-height: 56px;
+            }
+
+            .step-hint {
+                font-size: 14px;
+                margin-top: 8px;
+            }
+
+            #map {
+                height: 300px;
+                border-radius: 12px;
+            }
+        }
+
+        /* Touch feedback for mobile */
+        @media (hover: none) and (pointer: coarse) {
+            .arrival-item:active {
+                background: var(--bg-secondary);
+                transform: scale(0.98);
+            }
+
+            .theme-toggle:active {
+                transform: scale(0.95);
+            }
+
+            input:focus,
+            select:focus {
+                outline: 2px solid var(--accent-color);
+                outline-offset: 2px;
+            }
+        }
+
+        /* Screen reader only text */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* Skip to main content link */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 6px;
+            background: var(--accent-color);
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 4px;
+            z-index: 9999;
+        }
+
+        .skip-link:focus {
+            top: 6px;
+        }
+
         .empty-state {
             text-align: center;
             padding: 48px 24px;
@@ -411,16 +588,19 @@
     <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚇</text></svg>">
 </head>
 <body>
-    <header class="header">
+    <div class="offline-banner" id="offlineBanner">
+        📱 You're offline. Some features may not work properly.
+    </div>
+    <header class="header" role="banner">
         <div class="header-content">
             <div class="header-left">
                 <h1>🚇 NYC Subway</h1>
-                <span class="live-indicator">LIVE</span>
+                <span class="live-indicator" aria-label="Live real-time data">LIVE</span>
             </div>
-            <div class="theme-toggle">
-                <div class="theme-option active" onclick="setTheme('light')">☀️</div>
-                <div class="theme-option" onclick="setTheme('dark')">🌙</div>
-                <div class="theme-option" onclick="setTheme('night')">🌃</div>
+            <div class="theme-toggle" role="group" aria-label="Theme selection">
+                <div class="theme-option active" onclick="setTheme('light')" role="button" tabindex="0" aria-label="Light theme">☀️</div>
+                <div class="theme-option" onclick="setTheme('dark')" role="button" tabindex="0" aria-label="Dark theme">🌙</div>
+                <div class="theme-option" onclick="setTheme('night')" role="button" tabindex="0" aria-label="Night theme">🌃</div>
             </div>
         </div>
     </header>
@@ -433,7 +613,7 @@
 
                     <div class="input-group">
                         <label for="stationSearch">Find a station</label>
-                        <input type="text" id="stationSearch" placeholder="Times Square, Union Square..." oninput="searchStations()">
+                        <input type="text" id="stationSearch" placeholder="Search stations... (e.g. Times Square, 14 St, Q train)" oninput="debounceSearch('searchStations')" autocomplete="off">
                     </div>
 
                     <div class="input-group">
@@ -457,7 +637,7 @@
 
                     <div class="input-group">
                         <label for="fromSearch">From</label>
-                        <input type="text" id="fromSearch" placeholder="From station..." oninput="searchFromStations()">
+                        <input type="text" id="fromSearch" placeholder="Start typing station name or line..." oninput="debounceSearch('searchFromStations')" autocomplete="off">
                         <select id="fromStation">
                             <option value="">Select origin...</option>
                         </select>
@@ -465,7 +645,7 @@
 
                     <div class="input-group">
                         <label for="toSearch">To</label>
-                        <input type="text" id="toSearch" placeholder="To station..." oninput="searchToStations()">
+                        <input type="text" id="toSearch" placeholder="Destination station or line..." oninput="debounceSearch('searchToStations')" autocomplete="off">
                         <select id="toStation">
                             <option value="">Select destination...</option>
                         </select>
@@ -494,6 +674,53 @@
         let stationMarkers = [];
         let selectedStation = null;
         let allStations = [];
+
+        // Performance optimizations and caching
+        const cache = {
+            stations: null,
+            arrivals: new Map(),
+            routes: new Map()
+        };
+
+        const CACHE_DURATION = {
+            stations: 30 * 60 * 1000, // 30 minutes
+            arrivals: 60 * 1000,      // 1 minute
+            routes: 5 * 60 * 1000     // 5 minutes
+        };
+
+        function getCacheKey(type, params) {
+            return `${type}_${JSON.stringify(params)}`;
+        }
+
+        function isCacheValid(timestamp, duration) {
+            return Date.now() - timestamp < duration;
+        }
+
+        // Performance optimization: Lazy load markers only in viewport
+        function isInViewport(lat, lon) {
+            if (!map) return false;
+            const bounds = map.getBounds();
+            return bounds.contains([lat, lon]);
+        }
+
+        // Throttle function for performance
+        function throttle(func, delay) {
+            let timeoutId;
+            let lastExecTime = 0;
+            return function (...args) {
+                const currentTime = Date.now();
+                if (currentTime - lastExecTime > delay) {
+                    func.apply(this, args);
+                    lastExecTime = currentTime;
+                } else {
+                    clearTimeout(timeoutId);
+                    timeoutId = setTimeout(() => {
+                        func.apply(this, args);
+                        lastExecTime = Date.now();
+                    }, delay - (currentTime - lastExecTime));
+                }
+            };
+        }
 
         // Theme management
         function setTheme(theme) {
@@ -539,6 +766,14 @@
         // Load all stations from the API
         async function loadStations() {
             try {
+                // Check cache first
+                if (cache.stations && isCacheValid(cache.stations.timestamp, CACHE_DURATION.stations)) {
+                    allStations = cache.stations.data;
+                    populateStations();
+                    initMap();
+                    return;
+                }
+
                 // Use wildcard query to get all stations for map display
                 const response = await fetch('/api/stops?q=*');
                 const data = await response.json();
@@ -567,16 +802,26 @@
                     }
                 });
 
+                // Cache the result
+                cache.stations = {
+                    data: allStations,
+                    timestamp: Date.now()
+                };
+
                 populateStations();
                 initMap();
             } catch (error) {
                 console.error('Error loading stations:', error);
-                // Fallback to basic stations if API fails
-                allStations = [
-                    {id: "635", name: "Times Sq-42 St", lines: ["N","Q","R","W","S","1","2","3","7"], lat: 40.7560, lon: -73.9868},
-                    {id: "902", name: "Herald Sq-34 St", lines: ["B","D","F","M","N","Q","R","W"], lat: 40.7505, lon: -73.9885},
-                    {id: "127", name: "14 St-Union Sq", lines: ["L","N","Q","R","W","4","5","6"], lat: 40.7347, lon: -73.9906}
-                ];
+                // Try cached data first, then fallback to basic stations
+                if (cache.stations) {
+                    allStations = cache.stations.data;
+                } else {
+                    allStations = [
+                        {id: "635", name: "Times Sq-42 St", lines: ["N","Q","R","W","S","1","2","3","7"], lat: 40.7560, lon: -73.9868},
+                        {id: "902", name: "Herald Sq-34 St", lines: ["B","D","F","M","N","Q","R","W"], lat: 40.7505, lon: -73.9885},
+                        {id: "127", name: "14 St-Union Sq", lines: ["L","N","Q","R","W","4","5","6"], lat: 40.7347, lon: -73.9906}
+                    ];
+                }
                 populateStations();
                 initMap();
             }
@@ -649,6 +894,16 @@
         }
 
         // Search functionality
+        // Debounce timers
+        let searchTimers = {};
+
+        function debounceSearch(functionName) {
+            clearTimeout(searchTimers[functionName]);
+            searchTimers[functionName] = setTimeout(() => {
+                window[functionName]();
+            }, 150);
+        }
+
         function searchStations() {
             const query = document.getElementById('stationSearch').value.toLowerCase();
             filterStationSelect('stationSelect', query);
@@ -668,17 +923,64 @@
             const select = document.getElementById(selectId);
             select.innerHTML = '<option value="">Select a station...</option>';
 
-            const filtered = allStations.filter(station =>
-                station.name.toLowerCase().includes(query) ||
-                station.lines.some(line => line.toLowerCase().includes(query))
-            );
+            if (!query || query.length < 2) {
+                // Show all stations if query is too short
+                allStations.slice(0, 20).forEach(station => {
+                    const option = document.createElement('option');
+                    option.value = station.id;
+                    option.textContent = `${station.name} (${station.lines.join(', ')})`;
+                    select.appendChild(option);
+                });
+                return;
+            }
 
-            filtered.forEach(station => {
+            // Enhanced search with scoring
+            const scored = allStations.map(station => {
+                let score = 0;
+                const name = station.name.toLowerCase();
+                const queryLower = query.toLowerCase();
+
+                // Exact match bonus
+                if (name === queryLower) score += 100;
+
+                // Starts with bonus
+                if (name.startsWith(queryLower)) score += 50;
+
+                // Contains bonus
+                if (name.includes(queryLower)) score += 20;
+
+                // Word boundary bonus
+                const words = name.split(/[\s-]+/);
+                words.forEach(word => {
+                    if (word.startsWith(queryLower)) score += 30;
+                });
+
+                // Line match bonus
+                station.lines.forEach(line => {
+                    if (line.toLowerCase().includes(queryLower)) score += 10;
+                });
+
+                return { station, score };
+            })
+            .filter(item => item.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 15); // Limit results
+
+            scored.forEach(({ station }) => {
                 const option = document.createElement('option');
                 option.value = station.id;
-                option.textContent = station.name;
+                option.textContent = `${station.name} (${station.lines.join(', ')})`;
                 select.appendChild(option);
             });
+
+            // Show "no results" if nothing found
+            if (scored.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No stations found...';
+                option.disabled = true;
+                select.appendChild(option);
+            }
         }
 
         // Select station from map
@@ -786,13 +1088,32 @@
             highlightStation(stationId);
             const station = allStations.find(s => s.id === stationId);
 
-            document.getElementById('results').innerHTML = '<div class="loading">Loading live arrivals...</div>';
+            document.getElementById('results').innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading live arrivals...</div>';
 
             try {
                 // Strip direction suffix from station ID for arrivals API
                 const baseStationId = stationId.replace(/[NS]$/, '');
+                const cacheKey = getCacheKey('arrivals', { stationId: baseStationId, direction });
+
+                // Check cache first
+                if (cache.arrivals.has(cacheKey)) {
+                    const cached = cache.arrivals.get(cacheKey);
+                    if (isCacheValid(cached.timestamp, CACHE_DURATION.arrivals)) {
+                        const data = cached.data;
+                        // Use cached data but still show content below
+                    } else {
+                        cache.arrivals.delete(cacheKey);
+                    }
+                }
+
                 const response = await fetch(`/api/arrivals?stop_id=${baseStationId}&direction=${direction}`);
                 const data = await response.json();
+
+                // Cache the result
+                cache.arrivals.set(cacheKey, {
+                    data: data,
+                    timestamp: Date.now()
+                });
 
                 let html = `
                 <div class="results-section">
@@ -831,7 +1152,13 @@
                 }
             } catch (error) {
                 console.error('Error fetching arrivals:', error);
-                document.getElementById('results').innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545;">Error loading arrivals</div>';
+                document.getElementById('results').innerHTML = `
+                    <div class="error-message">
+                        <div>❌ Error loading arrivals</div>
+                        <div style="margin-top: 8px; font-size: 14px; opacity: 0.8;">Check your connection or try again</div>
+                        <button onclick="fetchArrivals('${stationId}')">Retry</button>
+                    </div>
+                `;
             }
         }
 
@@ -856,7 +1183,7 @@
             const fromStation = allStations.find(s => s.id === fromId);
             const toStation = allStations.find(s => s.id === toId);
 
-            document.getElementById('results').innerHTML = '<div class="loading">Planning your trip...</div>';
+            document.getElementById('results').innerHTML = '<div class="loading"><div class="loading-spinner"></div>Planning your trip...</div>';
 
             try {
                 const response = await fetch(`/api/route?from=${fromId}&to=${toId}`);
@@ -898,7 +1225,23 @@
                 }
             } catch (error) {
                 console.error('Error planning route:', error);
-                document.getElementById('results').innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545;">Error planning route</div>';
+                document.getElementById('results').innerHTML = `
+                    <div class="error-message">
+                        <div>❌ Error planning route</div>
+                        <div style="margin-top: 8px; font-size: 14px; opacity: 0.8;">Network error or service unavailable</div>
+                        <button onclick="planTrip()">Try Again</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Network status detection
+        function updateNetworkStatus() {
+            const offlineBanner = document.getElementById('offlineBanner');
+            if (navigator.onLine) {
+                offlineBanner.style.display = 'none';
+            } else {
+                offlineBanner.style.display = 'block';
             }
         }
 
@@ -906,6 +1249,11 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadTheme();
             loadStations();
+            updateNetworkStatus();
+
+            // Listen for network status changes
+            window.addEventListener('online', updateNetworkStatus);
+            window.addEventListener('offline', updateNetworkStatus);
         });
     </script>
 </body>
