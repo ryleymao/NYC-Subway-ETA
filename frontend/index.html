@@ -224,6 +224,99 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
+        /* Search Dropdown Styles */
+        .search-dropdown-container {
+            position: relative;
+        }
+
+        .search-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .dropdown-content {
+            padding: 0;
+        }
+
+        .dropdown-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.15s ease;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-item:hover {
+            background: var(--bg-secondary);
+        }
+
+        .dropdown-item.selected {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .dropdown-item.recent {
+            background: var(--bg-secondary);
+        }
+
+        .dropdown-item-main {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .dropdown-item-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .dropdown-item.selected .dropdown-item-name {
+            color: white;
+        }
+
+        .dropdown-item-lines {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .dropdown-item.selected .dropdown-item-lines {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .dropdown-item-meta {
+            font-size: 11px;
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
+        .dropdown-group-header {
+            padding: 8px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: var(--bg-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
         .btn {
             width: 100%;
             padding: 12px 16px;
@@ -1157,18 +1250,38 @@
 
                     <div class="input-group">
                         <label for="fromSearch">From</label>
-                        <input type="text" id="fromSearch" placeholder="Start typing station name or line..." oninput="debounceSearch('searchFromStations')" autocomplete="off">
-                        <select id="fromStation" onchange="clearToSearch(); saveStationSelection('fromStation')">
-                            <option value="">Select origin...</option>
-                        </select>
+                        <div class="search-dropdown-container">
+                            <input type="text" id="fromSearch" placeholder="Start typing station name or line..."
+                                   oninput="showSearchDropdown('from')"
+                                   onfocus="showSearchDropdown('from')"
+                                   onblur="hideSearchDropdown('from')"
+                                   onkeydown="handleDropdownKeydown(event, 'from')"
+                                   autocomplete="off">
+                            <div class="search-dropdown" id="fromDropdown" style="display: none;">
+                                <div class="dropdown-content" id="fromDropdownContent">
+                                    <!-- Dynamic content will be inserted here -->
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="fromStationId" value="">
                     </div>
 
                     <div class="input-group">
                         <label for="toSearch">To</label>
-                        <input type="text" id="toSearch" placeholder="Destination station or line..." oninput="debounceSearch('searchToStations')" autocomplete="off">
-                        <select id="toStation" onchange="saveStationSelection('toStation')">
-                            <option value="">Select destination...</option>
-                        </select>
+                        <div class="search-dropdown-container">
+                            <input type="text" id="toSearch" placeholder="Destination station or line..."
+                                   oninput="showSearchDropdown('to')"
+                                   onfocus="showSearchDropdown('to')"
+                                   onblur="hideSearchDropdown('to')"
+                                   onkeydown="handleDropdownKeydown(event, 'to')"
+                                   autocomplete="off">
+                            <div class="search-dropdown" id="toDropdown" style="display: none;">
+                                <div class="dropdown-content" id="toDropdownContent">
+                                    <!-- Dynamic content will be inserted here -->
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="toStationId" value="">
                     </div>
 
                     <!-- Advanced Filtering Options -->
@@ -1507,19 +1620,222 @@
         }
 
         function searchFromStations() {
-            enhancedSearch('fromSearch', 'fromStation');
+            // Legacy function - now handled by showSearchDropdown
         }
 
         function searchToStations() {
-            enhancedSearch('toSearch', 'toStation');
+            // Legacy function - now handled by showSearchDropdown
         }
 
         function clearToSearch() {
             const toSearch = document.getElementById('toSearch');
             if (toSearch) {
                 toSearch.value = '';
-                filterStationSelect('toStation', '');
+                document.getElementById('toStationId').value = '';
+                hideSearchDropdown('to');
             }
+        }
+
+        // New dropdown search system
+        let searchTimers = {};
+        let selectedIndex = -1;
+        let currentDropdown = null;
+
+        function showSearchDropdown(type) {
+            clearTimeout(searchTimers[type]);
+            searchTimers[type] = setTimeout(() => {
+                const input = document.getElementById(`${type}Search`);
+                const dropdown = document.getElementById(`${type}Dropdown`);
+                const content = document.getElementById(`${type}DropdownContent`);
+                const query = input.value.trim();
+
+                if (query.length < 1) {
+                    // Show recent searches when no query
+                    renderRecentSearches(type, content);
+                    dropdown.style.display = 'block';
+                    currentDropdown = type;
+                } else if (query.length >= 2) {
+                    // Show search results
+                    renderSearchResults(type, query, content);
+                    dropdown.style.display = 'block';
+                    currentDropdown = type;
+                } else {
+                    dropdown.style.display = 'none';
+                    currentDropdown = null;
+                }
+                selectedIndex = -1;
+            }, 150);
+        }
+
+        function hideSearchDropdown(type) {
+            setTimeout(() => {
+                const dropdown = document.getElementById(`${type}Dropdown`);
+                dropdown.style.display = 'none';
+                if (currentDropdown === type) {
+                    currentDropdown = null;
+                    selectedIndex = -1;
+                }
+            }, 200); // Delay to allow clicks on dropdown items
+        }
+
+        function renderRecentSearches(type, container) {
+            const recentSearches = tripHistory.getRecentSearches();
+            let html = '';
+
+            if (recentSearches.length > 0) {
+                html += '<div class="dropdown-group-header">Recent Searches</div>';
+                recentSearches.slice(0, 5).forEach((search, index) => {
+                    if (search.stationId && search.stationName) {
+                        html += `
+                            <div class="dropdown-item recent" onclick="selectStation('${type}', '${search.stationId}', '${search.stationName}')">
+                                <div class="dropdown-item-main">
+                                    <div class="dropdown-item-name">🕒 ${search.stationName}</div>
+                                </div>
+                                <div class="dropdown-item-meta">Recent</div>
+                            </div>
+                        `;
+                    }
+                });
+            }
+
+            // Show popular stations if no recent searches
+            if (recentSearches.length === 0) {
+                html += '<div class="dropdown-group-header">Popular Stations</div>';
+                const popularStations = ['Times Sq-42 St', '14 St-Union Sq', 'Grand Central-42 St', 'Herald Sq-34 St'];
+                allStations.filter(s => popularStations.includes(s.name)).forEach(station => {
+                    html += `
+                        <div class="dropdown-item" onclick="selectStation('${type}', '${station.id}', '${station.name}')">
+                            <div class="dropdown-item-main">
+                                <div class="dropdown-item-name">${station.name}</div>
+                                <div class="dropdown-item-lines">${station.lines.join(' ')}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            container.innerHTML = html;
+        }
+
+        function renderSearchResults(type, query, container) {
+            // Add to recent searches
+            tripHistory.addSearch(query);
+
+            // Get suggestions from recent searches
+            const suggestions = tripHistory.getSuggestions(query);
+
+            // Get matching stations from allStations
+            const stationMatches = allStations
+                .filter(station =>
+                    station.name.toLowerCase().includes(query.toLowerCase()) ||
+                    station.lines.some(line => line.toLowerCase().includes(query.toLowerCase()))
+                )
+                .slice(0, 8);
+
+            let html = '';
+
+            // Add recent suggestions first
+            if (suggestions.length > 0) {
+                html += '<div class="dropdown-group-header">Recent Searches</div>';
+                suggestions.forEach(suggestion => {
+                    if (suggestion.stationId) {
+                        html += `
+                            <div class="dropdown-item recent" onclick="selectStation('${type}', '${suggestion.stationId}', '${suggestion.text}')">
+                                <div class="dropdown-item-main">
+                                    <div class="dropdown-item-name">🕒 ${suggestion.text}</div>
+                                </div>
+                                <div class="dropdown-item-meta">Recent</div>
+                            </div>
+                        `;
+                    }
+                });
+            }
+
+            // Add station matches
+            if (stationMatches.length > 0) {
+                if (suggestions.length > 0) {
+                    html += '<div class="dropdown-group-header">Stations</div>';
+                }
+                stationMatches.forEach(station => {
+                    html += `
+                        <div class="dropdown-item" onclick="selectStation('${type}', '${station.id}', '${station.name}')">
+                            <div class="dropdown-item-main">
+                                <div class="dropdown-item-name">${station.name}</div>
+                                <div class="dropdown-item-lines">${station.lines.join(' ')}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            if (html === '') {
+                html = '<div class="dropdown-item" style="cursor: default; opacity: 0.6;">No stations found</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        function selectStation(type, stationId, stationName) {
+            const input = document.getElementById(`${type}Search`);
+            const hiddenInput = document.getElementById(`${type}StationId`);
+            const dropdown = document.getElementById(`${type}Dropdown`);
+
+            input.value = stationName;
+            hiddenInput.value = stationId;
+            dropdown.style.display = 'none';
+            currentDropdown = null;
+
+            // Save to recent searches
+            tripHistory.addSearch(stationName, stationId, stationName);
+
+            // Clear the other search if this is the from field
+            if (type === 'from') {
+                clearToSearch();
+            }
+        }
+
+        function handleDropdownKeydown(event, type) {
+            const dropdown = document.getElementById(`${type}Dropdown`);
+            if (dropdown.style.display === 'none') return;
+
+            const items = dropdown.querySelectorAll('.dropdown-item:not(.dropdown-group-header)');
+
+            switch (event.key) {
+                case 'ArrowDown':
+                    event.preventDefault();
+                    selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                    updateSelection(items);
+                    break;
+
+                case 'ArrowUp':
+                    event.preventDefault();
+                    selectedIndex = Math.max(selectedIndex - 1, 0);
+                    updateSelection(items);
+                    break;
+
+                case 'Enter':
+                    event.preventDefault();
+                    if (selectedIndex >= 0 && items[selectedIndex]) {
+                        items[selectedIndex].click();
+                    }
+                    break;
+
+                case 'Escape':
+                    event.preventDefault();
+                    hideSearchDropdown(type);
+                    break;
+            }
+        }
+
+        function updateSelection(items) {
+            items.forEach((item, index) => {
+                if (index === selectedIndex) {
+                    item.classList.add('selected');
+                    item.scrollIntoView({ block: 'nearest' });
+                } else {
+                    item.classList.remove('selected');
+                }
+            });
         }
 
         function filterStationSelect(selectId, query) {
@@ -1952,10 +2268,12 @@
         }
 
         function clearAllSelections() {
-            document.getElementById('fromStation').value = '';
-            document.getElementById('toStation').value = '';
+            document.getElementById('fromStationId').value = '';
+            document.getElementById('toStationId').value = '';
             document.getElementById('fromSearch').value = '';
             document.getElementById('toSearch').value = '';
+            hideSearchDropdown('from');
+            hideSearchDropdown('to');
             document.getElementById('results').innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">🗺️</div>
@@ -2239,13 +2557,17 @@
 
         // Load trip from history
         function loadTripFromHistory(fromId, toId, fromName, toName) {
-            // Set the dropdowns
-            document.getElementById('fromStation').value = fromId;
-            document.getElementById('toStation').value = toId;
+            // Set the hidden inputs
+            document.getElementById('fromStationId').value = fromId;
+            document.getElementById('toStationId').value = toId;
 
             // Set the search inputs
             document.getElementById('fromSearch').value = fromName;
             document.getElementById('toSearch').value = toName;
+
+            // Hide any open dropdowns
+            hideSearchDropdown('from');
+            hideSearchDropdown('to');
 
             // Plan the trip
             planTrip();
@@ -2324,8 +2646,8 @@
             // Clear any existing route highlighting
             clearRouteHighlighting();
 
-            const fromId = document.getElementById('fromStation').value;
-            const toId = document.getElementById('toStation').value;
+            const fromId = document.getElementById('fromStationId').value;
+            const toId = document.getElementById('toStationId').value;
 
             if (!fromId || !toId) {
                 alert('Please select both from and to stations');
