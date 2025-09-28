@@ -1249,39 +1249,34 @@
                     <h2 class="section-title">🗺️ Trip Planner</h2>
 
                     <div class="input-group">
-                        <label for="fromSearch">From</label>
+                        <label for="tripSearch">Plan a trip</label>
                         <div class="search-dropdown-container">
-                            <input type="text" id="fromSearch" placeholder="Start typing station name or line..."
-                                   oninput="showSearchDropdown('from')"
-                                   onfocus="showSearchDropdown('from')"
-                                   onblur="hideSearchDropdown('from')"
-                                   onkeydown="handleDropdownKeydown(event, 'from')"
+                            <input type="text" id="tripSearch" placeholder="Type 'from Times Square to Union Square' or just 'Times Square'"
+                                   oninput="handleTripSearch()"
+                                   onfocus="handleTripSearch()"
+                                   onblur="hideTripDropdown()"
+                                   onkeydown="handleTripKeydown(event)"
                                    autocomplete="off">
-                            <div class="search-dropdown" id="fromDropdown" style="display: none;">
-                                <div class="dropdown-content" id="fromDropdownContent">
+                            <div class="search-dropdown" id="tripDropdown" style="display: none;">
+                                <div class="dropdown-content" id="tripDropdownContent">
                                     <!-- Dynamic content will be inserted here -->
                                 </div>
                             </div>
                         </div>
-                        <input type="hidden" id="fromStationId" value="">
+                        <input type="hidden" id="selectedFrom" value="">
+                        <input type="hidden" id="selectedTo" value="">
                     </div>
 
-                    <div class="input-group">
-                        <label for="toSearch">To</label>
-                        <div class="search-dropdown-container">
-                            <input type="text" id="toSearch" placeholder="Destination station or line..."
-                                   oninput="showSearchDropdown('to')"
-                                   onfocus="showSearchDropdown('to')"
-                                   onblur="hideSearchDropdown('to')"
-                                   onkeydown="handleDropdownKeydown(event, 'to')"
-                                   autocomplete="off">
-                            <div class="search-dropdown" id="toDropdown" style="display: none;">
-                                <div class="dropdown-content" id="toDropdownContent">
-                                    <!-- Dynamic content will be inserted here -->
-                                </div>
-                            </div>
+                    <div id="selectedTrip" style="display: none; margin-bottom: 16px; padding: 12px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border-color);">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <strong>🚇 Your Trip</strong>
+                            <button onclick="clearTripSelection()" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px;">×</button>
                         </div>
-                        <input type="hidden" id="toStationId" value="">
+                        <div style="display: flex; align-items: center; gap: 12px; font-size: 14px;">
+                            <div><strong>From:</strong> <span id="selectedFromName">-</span></div>
+                            <div style="color: var(--text-muted);">→</div>
+                            <div><strong>To:</strong> <span id="selectedToName">-</span></div>
+                        </div>
                     </div>
 
                     <!-- Advanced Filtering Options -->
@@ -1361,7 +1356,7 @@
                         </div>
                     </div>
 
-                    <button class="btn" onclick="planTrip()">Plan Trip</button>
+                    <button class="btn" onclick="planTrip()" id="planTripBtn">Plan Trip</button>
                 </div>
 
                 <div id="results">
@@ -1900,6 +1895,104 @@
                 option.disabled = true;
                 select.appendChild(option);
             }
+        }
+
+        // NEW SINGLE SEARCH INTERFACE FUNCTIONS
+        function handleTripSearch() {
+            const input = document.getElementById('tripSearch');
+            const dropdown = document.getElementById('tripDropdown');
+            const content = document.getElementById('tripDropdownContent');
+            const query = input.value.trim();
+
+            if (!query || query.length < 2) {
+                dropdown.style.display = 'none';
+                return;
+            }
+
+            // Parse natural language input
+            let html = '';
+            const fromToMatch = query.match(/from\s+(.+?)\s+to\s+(.+)/i);
+
+            if (fromToMatch) {
+                // Handle "from X to Y" format
+                const fromStation = fromToMatch[1].trim();
+                const toStation = fromToMatch[2].trim();
+                html += `<div class="dropdown-group-header">Trip: ${fromStation} → ${toStation}</div>`;
+
+                const fromResults = searchStations(fromStation);
+                const toResults = searchStations(toStation);
+
+                if (fromResults.length > 0 && toResults.length > 0) {
+                    html += `<div class="dropdown-item" onclick="selectTrip('${fromResults[0].id}', '${fromResults[0].name}', '${toResults[0].id}', '${toResults[0].name}')">
+                        <div class="dropdown-item-main">
+                            <div class="dropdown-item-name">🚇 ${fromResults[0].name} → ${toResults[0].name}</div>
+                        </div>
+                    </div>`;
+                }
+            } else {
+                // Show station suggestions for single input
+                html += '<div class="dropdown-group-header">Select starting station</div>';
+                const results = searchStations(query);
+                results.slice(0, 5).forEach(station => {
+                    html += `<div class="dropdown-item" onclick="selectStartingStation('${station.id}', '${station.name}')">
+                        <div class="dropdown-item-main">
+                            <div class="dropdown-item-name">${station.name}</div>
+                            <div class="dropdown-item-lines">${station.lines.join(' ')}</div>
+                        </div>
+                    </div>`;
+                });
+            }
+
+            content.innerHTML = html;
+            dropdown.style.display = 'block';
+        }
+
+        function selectTrip(fromId, fromName, toId, toName) {
+            document.getElementById('selectedFrom').value = fromId;
+            document.getElementById('selectedTo').value = toId;
+            document.getElementById('selectedFromName').textContent = fromName;
+            document.getElementById('selectedToName').textContent = toName;
+            document.getElementById('selectedTrip').style.display = 'block';
+            document.getElementById('tripSearch').value = `${fromName} to ${toName}`;
+            hideTripDropdown();
+        }
+
+        function selectStartingStation(stationId, stationName) {
+            document.getElementById('tripSearch').value = `from ${stationName} to `;
+            document.getElementById('tripSearch').focus();
+            // Move cursor to the end
+            const input = document.getElementById('tripSearch');
+            input.setSelectionRange(input.value.length, input.value.length);
+            hideTripDropdown();
+        }
+
+        function clearTripSelection() {
+            document.getElementById('selectedFrom').value = '';
+            document.getElementById('selectedTo').value = '';
+            document.getElementById('selectedTrip').style.display = 'none';
+            document.getElementById('tripSearch').value = '';
+        }
+
+        function hideTripDropdown() {
+            setTimeout(() => {
+                document.getElementById('tripDropdown').style.display = 'none';
+            }, 200);
+        }
+
+        function handleTripKeydown(event) {
+            // Add keyboard navigation if needed
+            if (event.key === 'Escape') {
+                hideTripDropdown();
+            }
+        }
+
+        function searchStations(query) {
+            if (!allStations || !query) return [];
+            const queryLower = query.toLowerCase();
+            return allStations.filter(station =>
+                station.name.toLowerCase().includes(queryLower) ||
+                station.lines.some(line => line.toLowerCase().includes(queryLower))
+            ).slice(0, 10);
         }
 
         // Select station from map
@@ -2646,8 +2739,8 @@
             // Clear any existing route highlighting
             clearRouteHighlighting();
 
-            const fromId = document.getElementById('fromStationId').value;
-            const toId = document.getElementById('toStationId').value;
+            const fromId = document.getElementById('selectedFrom').value;
+            const toId = document.getElementById('selectedTo').value;
 
             if (!fromId || !toId) {
                 alert('Please select both from and to stations');
