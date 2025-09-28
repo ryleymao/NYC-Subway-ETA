@@ -277,11 +277,28 @@
             border-left: 4px solid #059669;
             transition: all 0.3s ease;
             cursor: pointer;
+            touch-action: manipulation;
+            min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .route-step:hover {
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Mobile-specific touch interactions */
+        @media (hover: none) and (pointer: coarse) {
+            .route-step:hover {
+                transform: none;
+                box-shadow: none;
+            }
+
+            .route-step:active {
+                background: var(--bg-secondary);
+                transform: scale(0.98);
+                border-left-color: var(--accent-color);
+            }
         }
 
         .transfer-step {
@@ -403,6 +420,87 @@
             padding: 8px;
             font-size: 14px;
             display: none;
+        }
+
+        /* Mobile responsiveness and touch enhancements */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 16px;
+                align-items: stretch;
+            }
+
+            .theme-toggle {
+                align-self: center;
+            }
+
+            .content {
+                padding: 16px;
+            }
+
+            .main-sections {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .input-group {
+                margin-bottom: 20px;
+            }
+
+            .input-group input,
+            .input-group select {
+                font-size: 16px;
+                padding: 16px 12px;
+                min-height: 44px;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .button-group {
+                gap: 12px;
+            }
+
+            .button-group button {
+                padding: 16px 24px;
+                font-size: 16px;
+                min-height: 44px;
+                flex: 1;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .arrival-item {
+                padding: 16px 12px;
+                min-height: 56px;
+            }
+
+            .step-hint {
+                font-size: 14px;
+                margin-top: 8px;
+            }
+
+            #map {
+                height: 300px;
+                border-radius: 12px;
+            }
+        }
+
+        /* Touch feedback for mobile */
+        @media (hover: none) and (pointer: coarse) {
+            .arrival-item:active {
+                background: var(--bg-secondary);
+                transform: scale(0.98);
+            }
+
+            .theme-toggle:active {
+                transform: scale(0.95);
+            }
+
+            input:focus,
+            select:focus {
+                outline: 2px solid var(--accent-color);
+                outline-offset: 2px;
+            }
         }
 
         .empty-state {
