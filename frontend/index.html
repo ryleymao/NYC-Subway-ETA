@@ -110,6 +110,29 @@
             background: var(--border-color);
         }
 
+        .help-button {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 16px;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .help-button:hover {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .help-button:active {
+            transform: scale(0.95);
+        }
+
         .theme-option {
             padding: 4px 8px;
             border-radius: 12px;
@@ -362,6 +385,131 @@
             width: auto;
             margin-right: 8px;
             margin-bottom: 0;
+        }
+
+        /* Keyboard Help Modal Styles */
+        .keyboard-help-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border-color);
+            outline: none;
+        }
+
+        .modal-header {
+            padding: 20px 24px 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 4px;
+            line-height: 1;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-secondary);
+        }
+
+        .modal-body {
+            padding: 0 24px;
+        }
+
+        .shortcut-section {
+            margin-bottom: 24px;
+        }
+
+        .shortcut-section h4 {
+            margin: 0 0 12px 0;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .shortcut-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            gap: 12px;
+        }
+
+        .shortcut-item kbd {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary);
+            min-width: 24px;
+            text-align: center;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .shortcut-item span {
+            color: var(--text-secondary);
+            font-size: 14px;
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 20px 24px 24px 24px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .modal-footer .btn {
+            width: auto;
+            padding: 10px 24px;
+            margin: 0;
         }
 
         .results-section {
@@ -872,10 +1020,15 @@
                 <h1>🚇 NYC Subway</h1>
                 <span class="live-indicator" aria-label="Live real-time data">LIVE</span>
             </div>
-            <div class="theme-toggle" role="group" aria-label="Theme selection">
-                <div class="theme-option active" onclick="setTheme('light')" role="button" tabindex="0" aria-label="Light theme">☀️</div>
-                <div class="theme-option" onclick="setTheme('dark')" role="button" tabindex="0" aria-label="Dark theme">🌙</div>
-                <div class="theme-option" onclick="setTheme('night')" role="button" tabindex="0" aria-label="Night theme">🌃</div>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <div class="theme-toggle" role="group" aria-label="Theme selection">
+                    <div class="theme-option active" onclick="setTheme('light')" role="button" tabindex="0" aria-label="Light theme">☀️</div>
+                    <div class="theme-option" onclick="setTheme('dark')" role="button" tabindex="0" aria-label="Dark theme">🌙</div>
+                    <div class="theme-option" onclick="setTheme('night')" role="button" tabindex="0" aria-label="Night theme">🌃</div>
+                </div>
+                <button class="help-button" onclick="showKeyboardHelp()" title="Keyboard shortcuts (H)" aria-label="Show keyboard shortcuts">
+                    ⌨️
+                </button>
             </div>
         </div>
     </header>
@@ -1646,6 +1799,200 @@
             });
         }
 
+        // Keyboard shortcuts system for power users
+        const keyboardShortcuts = {
+            // Global shortcuts (work anywhere)
+            global: {
+                'KeyT': () => planTrip(), // Plan Trip
+                'KeyF': () => document.getElementById('fromSearch').focus(), // Focus From field
+                'KeyD': () => document.getElementById('toSearch').focus(), // Focus Destination field
+                'KeyR': () => location.reload(), // Refresh page
+                'KeyH': () => showKeyboardHelp(), // Show help
+                'Digit1': () => setTheme('light'), // Light theme
+                'Digit2': () => setTheme('dark'), // Dark theme
+                'Digit3': () => setTheme('night'), // Night theme
+                'KeyS': () => favorites.toggle(), // Show/hide favorites
+                'KeyG': () => toggleFilters(), // Toggle filters
+                'KeyC': () => clearAllSelections(), // Clear selections
+                'Escape': () => closeModals(), // Close modals/overlays
+            },
+
+            // Context-specific shortcuts (only when input fields are focused)
+            input: {
+                'Enter': (event) => {
+                    if (event.target.id === 'fromSearch' || event.target.id === 'toSearch') {
+                        planTrip();
+                    }
+                },
+                'Tab': (event) => {
+                    // Enhanced tab navigation between form elements
+                    if (event.target.id === 'fromSearch') {
+                        event.preventDefault();
+                        document.getElementById('toSearch').focus();
+                    }
+                }
+            }
+        };
+
+        function initializeKeyboardShortcuts() {
+            document.addEventListener('keydown', (event) => {
+                // Don't trigger shortcuts if user is typing in input fields (except for specific input shortcuts)
+                if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+                    // Handle input-specific shortcuts
+                    if (keyboardShortcuts.input[event.code]) {
+                        keyboardShortcuts.input[event.code](event);
+                    }
+                    return;
+                }
+
+                // Handle global shortcuts with modifiers
+                if (event.ctrlKey || event.metaKey || event.altKey) {
+                    switch (true) {
+                        case (event.ctrlKey && event.key === 'k'): // Ctrl+K: Quick search
+                            event.preventDefault();
+                            document.getElementById('fromSearch').focus();
+                            break;
+                        case (event.ctrlKey && event.key === '/'): // Ctrl+/: Show help
+                            event.preventDefault();
+                            showKeyboardHelp();
+                            break;
+                        case (event.ctrlKey && event.shiftKey && event.key === 'F'): // Ctrl+Shift+F: Toggle favorites
+                            event.preventDefault();
+                            favorites.toggle();
+                            break;
+                    }
+                    return;
+                }
+
+                // Handle single-key global shortcuts
+                if (keyboardShortcuts.global[event.code]) {
+                    event.preventDefault();
+                    keyboardShortcuts.global[event.code]();
+                }
+            });
+        }
+
+        function clearAllSelections() {
+            document.getElementById('fromStation').value = '';
+            document.getElementById('toStation').value = '';
+            document.getElementById('fromSearch').value = '';
+            document.getElementById('toSearch').value = '';
+            document.getElementById('results').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🗺️</div>
+                    <div>Select a station to see live arrivals<br>or plan your trip above</div>
+                </div>
+            `;
+            clearRouteHighlighting();
+        }
+
+        function closeModals() {
+            // Close any open modals or overlays
+            const helpModal = document.getElementById('keyboardHelpModal');
+            if (helpModal && helpModal.style.display !== 'none') {
+                hideKeyboardHelp();
+            }
+
+            // Collapse filter panel if expanded
+            const filterContent = document.getElementById('filterContent');
+            if (filterContent && filterContent.classList.contains('expanded')) {
+                toggleFilters();
+            }
+        }
+
+        function showKeyboardHelp() {
+            // Create or show keyboard help modal
+            let modal = document.getElementById('keyboardHelpModal');
+
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'keyboardHelpModal';
+                modal.className = 'keyboard-help-modal';
+                modal.innerHTML = `
+                    <div class="modal-overlay" onclick="hideKeyboardHelp()"></div>
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>⌨️ Keyboard Shortcuts</h3>
+                            <button class="modal-close" onclick="hideKeyboardHelp()">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="shortcut-section">
+                                <h4>🚀 Quick Actions</h4>
+                                <div class="shortcut-item">
+                                    <kbd>T</kbd> <span>Plan trip with current selections</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>F</kbd> <span>Focus "From" station field</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>D</kbd> <span>Focus "To" destination field</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>C</kbd> <span>Clear all selections</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>R</kbd> <span>Refresh page</span>
+                                </div>
+                            </div>
+
+                            <div class="shortcut-section">
+                                <h4>🎨 Themes & UI</h4>
+                                <div class="shortcut-item">
+                                    <kbd>1</kbd> <span>Light theme</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>2</kbd> <span>Dark theme</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>3</kbd> <span>Night theme</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>S</kbd> <span>Toggle favorites panel</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>G</kbd> <span>Toggle route filters</span>
+                                </div>
+                            </div>
+
+                            <div class="shortcut-section">
+                                <h4>🔧 Advanced</h4>
+                                <div class="shortcut-item">
+                                    <kbd>Ctrl</kbd> + <kbd>K</kbd> <span>Quick search (focus from field)</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>Ctrl</kbd> + <kbd>/</kbd> <span>Show this help</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd> <span>Toggle favorites</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>Esc</kbd> <span>Close modals/overlays</span>
+                                </div>
+                                <div class="shortcut-item">
+                                    <kbd>Enter</kbd> <span>Plan trip (when in input field)</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn" onclick="hideKeyboardHelp()">Got it!</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+
+            modal.style.display = 'flex';
+            // Focus the modal for accessibility
+            modal.querySelector('.modal-content').focus();
+        }
+
+        function hideKeyboardHelp() {
+            const modal = document.getElementById('keyboardHelpModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
         // Plan trip with filters
         async function planTrip() {
             // Clear any existing route highlighting
@@ -1943,6 +2290,9 @@
             // Initialize filtering system
             initializeLineChips();
             loadFilterPrefs();
+
+            // Initialize keyboard shortcuts
+            initializeKeyboardShortcuts();
 
             // Load route from URL if parameters exist
             setTimeout(() => {
