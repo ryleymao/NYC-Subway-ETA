@@ -223,6 +223,147 @@
             transform: translateY(1px);
         }
 
+        .btn-secondary {
+            width: auto;
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin: 4px;
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+        }
+
+        /* Advanced Filter Styles */
+        .filter-section {
+            margin: 16px 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .filter-header {
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+
+        .filter-header:hover {
+            background: var(--border-color);
+        }
+
+        .filter-toggle {
+            transition: transform 0.2s ease;
+        }
+
+        .filter-toggle.expanded {
+            transform: rotate(180deg);
+        }
+
+        .filter-content {
+            padding: 16px;
+            display: none;
+        }
+
+        .filter-content.expanded {
+            display: block;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .filter-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-group {
+            flex: 1;
+        }
+
+        .filter-group.full-width {
+            flex: none;
+            width: 100%;
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .filter-group select {
+            margin-bottom: 0;
+        }
+
+        .line-selector {
+            margin-top: 6px;
+        }
+
+        .line-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .line-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            color: white;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .line-chip:hover {
+            transform: scale(1.1);
+        }
+
+        .line-chip.avoided {
+            opacity: 0.3;
+            border-color: #ef4444;
+            filter: grayscale(0.7);
+        }
+
+        .filter-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .filter-group label input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+            margin-bottom: 0;
+        }
+
         .results-section {
             margin-top: 24px;
         }
@@ -482,6 +623,36 @@
             #map {
                 height: 300px;
                 border-radius: 12px;
+            }
+
+            /* Mobile filter adjustments */
+            .filter-row {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .filter-group {
+                flex: none;
+            }
+
+            .line-chips {
+                gap: 4px;
+            }
+
+            .line-chip {
+                width: 24px;
+                height: 24px;
+                font-size: 11px;
+            }
+
+            .filter-actions {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .btn-secondary {
+                width: 100%;
+                margin: 0;
             }
         }
 
@@ -764,6 +935,83 @@
                         <select id="toStation">
                             <option value="">Select destination...</option>
                         </select>
+                    </div>
+
+                    <!-- Advanced Filtering Options -->
+                    <div class="filter-section" id="routeFilters">
+                        <div class="filter-header" onclick="toggleFilters()">
+                            <span>⚙️ Route Filters</span>
+                            <span class="filter-toggle" id="filterToggle">▼</span>
+                        </div>
+
+                        <div class="filter-content" id="filterContent">
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label for="maxTransfers">Max Transfers</label>
+                                    <select id="maxTransfers">
+                                        <option value="0">Direct only</option>
+                                        <option value="1" selected>Up to 1 transfer</option>
+                                        <option value="2">Up to 2 transfers</option>
+                                        <option value="3">Up to 3 transfers</option>
+                                    </select>
+                                </div>
+
+                                <div class="filter-group">
+                                    <label for="routeType">Route Type</label>
+                                    <select id="routeType">
+                                        <option value="fastest" selected>Fastest</option>
+                                        <option value="least_transfers">Fewest transfers</option>
+                                        <option value="least_walking">Least walking</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="filter-row">
+                                <div class="filter-group">
+                                    <label for="avoidLines">Avoid Lines</label>
+                                    <div class="line-selector" id="avoidLines">
+                                        <div class="line-chips">
+                                            <span class="line-chip" data-line="1" style="background: #ee352e;">1</span>
+                                            <span class="line-chip" data-line="2" style="background: #ee352e;">2</span>
+                                            <span class="line-chip" data-line="3" style="background: #ee352e;">3</span>
+                                            <span class="line-chip" data-line="4" style="background: #00933c;">4</span>
+                                            <span class="line-chip" data-line="5" style="background: #00933c;">5</span>
+                                            <span class="line-chip" data-line="6" style="background: #00933c;">6</span>
+                                            <span class="line-chip" data-line="7" style="background: #b933ad;">7</span>
+                                            <span class="line-chip" data-line="A" style="background: #0039a6;">A</span>
+                                            <span class="line-chip" data-line="B" style="background: #ff6319;">B</span>
+                                            <span class="line-chip" data-line="C" style="background: #0039a6;">C</span>
+                                            <span class="line-chip" data-line="D" style="background: #ff6319;">D</span>
+                                            <span class="line-chip" data-line="E" style="background: #0039a6;">E</span>
+                                            <span class="line-chip" data-line="F" style="background: #ff6319;">F</span>
+                                            <span class="line-chip" data-line="G" style="background: #6cbe45;">G</span>
+                                            <span class="line-chip" data-line="J" style="background: #996633;">J</span>
+                                            <span class="line-chip" data-line="L" style="background: #a7a9ac;">L</span>
+                                            <span class="line-chip" data-line="M" style="background: #ff6319;">M</span>
+                                            <span class="line-chip" data-line="N" style="background: #fccc0a;">N</span>
+                                            <span class="line-chip" data-line="Q" style="background: #fccc0a;">Q</span>
+                                            <span class="line-chip" data-line="R" style="background: #fccc0a;">R</span>
+                                            <span class="line-chip" data-line="W" style="background: #fccc0a;">W</span>
+                                            <span class="line-chip" data-line="Z" style="background: #996633;">Z</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="filter-row">
+                                <div class="filter-group full-width">
+                                    <label>
+                                        <input type="checkbox" id="accessibleOnly">
+                                        Wheelchair accessible stations only
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="filter-actions">
+                                <button class="btn-secondary" onclick="resetFilters()">Reset Filters</button>
+                                <button class="btn-secondary" onclick="saveFilterPrefs()">Save as Default</button>
+                            </div>
+                        </div>
                     </div>
 
                     <button class="btn" onclick="planTrip()">Plan Trip</button>
@@ -1307,7 +1555,98 @@
             }
         }
 
-        // Plan trip
+        // Filter management functions
+        function toggleFilters() {
+            const content = document.getElementById('filterContent');
+            const toggle = document.getElementById('filterToggle');
+
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                toggle.classList.remove('expanded');
+            } else {
+                content.classList.add('expanded');
+                toggle.classList.add('expanded');
+            }
+        }
+
+        function resetFilters() {
+            // Reset max transfers
+            document.getElementById('maxTransfers').value = '1';
+
+            // Reset route type
+            document.getElementById('routeType').value = 'fastest';
+
+            // Reset avoided lines
+            document.querySelectorAll('.line-chip').forEach(chip => {
+                chip.classList.remove('avoided');
+            });
+
+            // Reset accessibility filter
+            document.getElementById('accessibleOnly').checked = false;
+
+            // Save reset state
+            localStorage.removeItem('routeFilters');
+        }
+
+        function saveFilterPrefs() {
+            const filters = getActiveFilters();
+            localStorage.setItem('routeFilters', JSON.stringify(filters));
+
+            // Show confirmation
+            const saveBtn = event.target;
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = '✓ Saved';
+            setTimeout(() => {
+                saveBtn.textContent = originalText;
+            }, 1500);
+        }
+
+        function loadFilterPrefs() {
+            try {
+                const saved = localStorage.getItem('routeFilters');
+                if (saved) {
+                    const filters = JSON.parse(saved);
+
+                    // Apply saved filters
+                    document.getElementById('maxTransfers').value = filters.maxTransfers || '1';
+                    document.getElementById('routeType').value = filters.routeType || 'fastest';
+                    document.getElementById('accessibleOnly').checked = filters.accessibleOnly || false;
+
+                    // Apply avoided lines
+                    if (filters.avoidedLines) {
+                        filters.avoidedLines.forEach(line => {
+                            const chip = document.querySelector(`.line-chip[data-line="${line}"]`);
+                            if (chip) chip.classList.add('avoided');
+                        });
+                    }
+                }
+            } catch (e) {
+                console.warn('Could not load filter preferences:', e);
+            }
+        }
+
+        function getActiveFilters() {
+            const avoidedLines = Array.from(document.querySelectorAll('.line-chip.avoided'))
+                .map(chip => chip.dataset.line);
+
+            return {
+                maxTransfers: parseInt(document.getElementById('maxTransfers').value),
+                routeType: document.getElementById('routeType').value,
+                avoidedLines: avoidedLines,
+                accessibleOnly: document.getElementById('accessibleOnly').checked
+            };
+        }
+
+        // Line chip toggle functionality
+        function initializeLineChips() {
+            document.querySelectorAll('.line-chip').forEach(chip => {
+                chip.addEventListener('click', function() {
+                    this.classList.toggle('avoided');
+                });
+            });
+        }
+
+        // Plan trip with filters
         async function planTrip() {
             // Clear any existing route highlighting
             clearRouteHighlighting();
@@ -1330,8 +1669,31 @@
 
             document.getElementById('results').innerHTML = '<div class="loading"><div class="loading-spinner"></div>Planning your trip...</div>';
 
+            // Get active filters
+            const filters = getActiveFilters();
+
+            // Build query parameters with filters
+            const params = new URLSearchParams({
+                from: fromId,
+                to: toId,
+                max_transfers: filters.maxTransfers
+            });
+
+            // Add optional filter parameters
+            if (filters.avoidedLines.length > 0) {
+                params.append('avoid_lines', filters.avoidedLines.join(','));
+            }
+
+            if (filters.routeType !== 'fastest') {
+                params.append('route_type', filters.routeType);
+            }
+
+            if (filters.accessibleOnly) {
+                params.append('accessible_only', 'true');
+            }
+
             try {
-                const response = await fetch(`/api/route?from=${fromId}&to=${toId}`);
+                const response = await fetch(`/api/route?${params.toString()}`);
 
                 if (response.ok) {
                     const route = await response.json();
@@ -1577,6 +1939,10 @@
             loadStations();
             updateNetworkStatus();
             favorites.render();
+
+            // Initialize filtering system
+            initializeLineChips();
+            loadFilterPrefs();
 
             // Load route from URL if parameters exist
             setTimeout(() => {
