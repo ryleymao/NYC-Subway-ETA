@@ -356,6 +356,55 @@
             font-size: 14px;
         }
 
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            border-top-color: var(--accent-color);
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 20px;
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.2);
+            border-radius: 8px;
+            color: #dc3545;
+            margin: 16px 0;
+        }
+
+        .error-message button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            margin-top: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .error-message button:hover {
+            background: #c82333;
+        }
+
+        .offline-banner {
+            background: #ffc107;
+            color: #212529;
+            text-align: center;
+            padding: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
         .empty-state {
             text-align: center;
             padding: 48px 24px;
@@ -411,6 +460,9 @@
     <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚇</text></svg>">
 </head>
 <body>
+    <div class="offline-banner" id="offlineBanner">
+        📱 You're offline. Some features may not work properly.
+    </div>
     <header class="header">
         <div class="header-content">
             <div class="header-left">
@@ -786,7 +838,7 @@
             highlightStation(stationId);
             const station = allStations.find(s => s.id === stationId);
 
-            document.getElementById('results').innerHTML = '<div class="loading">Loading live arrivals...</div>';
+            document.getElementById('results').innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading live arrivals...</div>';
 
             try {
                 // Strip direction suffix from station ID for arrivals API
@@ -831,7 +883,13 @@
                 }
             } catch (error) {
                 console.error('Error fetching arrivals:', error);
-                document.getElementById('results').innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545;">Error loading arrivals</div>';
+                document.getElementById('results').innerHTML = `
+                    <div class="error-message">
+                        <div>❌ Error loading arrivals</div>
+                        <div style="margin-top: 8px; font-size: 14px; opacity: 0.8;">Check your connection or try again</div>
+                        <button onclick="fetchArrivals('${stationId}')">Retry</button>
+                    </div>
+                `;
             }
         }
 
@@ -856,7 +914,7 @@
             const fromStation = allStations.find(s => s.id === fromId);
             const toStation = allStations.find(s => s.id === toId);
 
-            document.getElementById('results').innerHTML = '<div class="loading">Planning your trip...</div>';
+            document.getElementById('results').innerHTML = '<div class="loading"><div class="loading-spinner"></div>Planning your trip...</div>';
 
             try {
                 const response = await fetch(`/api/route?from=${fromId}&to=${toId}`);
@@ -898,7 +956,23 @@
                 }
             } catch (error) {
                 console.error('Error planning route:', error);
-                document.getElementById('results').innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545;">Error planning route</div>';
+                document.getElementById('results').innerHTML = `
+                    <div class="error-message">
+                        <div>❌ Error planning route</div>
+                        <div style="margin-top: 8px; font-size: 14px; opacity: 0.8;">Network error or service unavailable</div>
+                        <button onclick="planTrip()">Try Again</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Network status detection
+        function updateNetworkStatus() {
+            const offlineBanner = document.getElementById('offlineBanner');
+            if (navigator.onLine) {
+                offlineBanner.style.display = 'none';
+            } else {
+                offlineBanner.style.display = 'block';
             }
         }
 
@@ -906,6 +980,11 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadTheme();
             loadStations();
+            updateNetworkStatus();
+
+            // Listen for network status changes
+            window.addEventListener('online', updateNetworkStatus);
+            window.addEventListener('offline', updateNetworkStatus);
         });
     </script>
 </body>
