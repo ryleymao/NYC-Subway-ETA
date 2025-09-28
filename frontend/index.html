@@ -547,6 +547,53 @@
         let selectedStation = null;
         let allStations = [];
 
+        // Performance optimizations and caching
+        const cache = {
+            stations: null,
+            arrivals: new Map(),
+            routes: new Map()
+        };
+
+        const CACHE_DURATION = {
+            stations: 30 * 60 * 1000, // 30 minutes
+            arrivals: 60 * 1000,      // 1 minute
+            routes: 5 * 60 * 1000     // 5 minutes
+        };
+
+        function getCacheKey(type, params) {
+            return `${type}_${JSON.stringify(params)}`;
+        }
+
+        function isCacheValid(timestamp, duration) {
+            return Date.now() - timestamp < duration;
+        }
+
+        // Performance optimization: Lazy load markers only in viewport
+        function isInViewport(lat, lon) {
+            if (!map) return false;
+            const bounds = map.getBounds();
+            return bounds.contains([lat, lon]);
+        }
+
+        // Throttle function for performance
+        function throttle(func, delay) {
+            let timeoutId;
+            let lastExecTime = 0;
+            return function (...args) {
+                const currentTime = Date.now();
+                if (currentTime - lastExecTime > delay) {
+                    func.apply(this, args);
+                    lastExecTime = currentTime;
+                } else {
+                    clearTimeout(timeoutId);
+                    timeoutId = setTimeout(() => {
+                        func.apply(this, args);
+                        lastExecTime = Date.now();
+                    }, delay - (currentTime - lastExecTime));
+                }
+            };
+        }
+
         // Theme management
         function setTheme(theme) {
             document.documentElement.setAttribute('data-theme', theme);
@@ -591,6 +638,14 @@
         // Load all stations from the API
         async function loadStations() {
             try {
+                // Check cache first
+                if (cache.stations && isCacheValid(cache.stations.timestamp, CACHE_DURATION.stations)) {
+                    allStations = cache.stations.data;
+                    populateStations();
+                    initMap();
+                    return;
+                }
+
                 // Use wildcard query to get all stations for map display
                 const response = await fetch('/api/stops?q=*');
                 const data = await response.json();
@@ -619,16 +674,26 @@
                     }
                 });
 
+                // Cache the result
+                cache.stations = {
+                    data: allStations,
+                    timestamp: Date.now()
+                };
+
                 populateStations();
                 initMap();
             } catch (error) {
                 console.error('Error loading stations:', error);
-                // Fallback to basic stations if API fails
-                allStations = [
-                    {id: "635", name: "Times Sq-42 St", lines: ["N","Q","R","W","S","1","2","3","7"], lat: 40.7560, lon: -73.9868},
-                    {id: "902", name: "Herald Sq-34 St", lines: ["B","D","F","M","N","Q","R","W"], lat: 40.7505, lon: -73.9885},
-                    {id: "127", name: "14 St-Union Sq", lines: ["L","N","Q","R","W","4","5","6"], lat: 40.7347, lon: -73.9906}
-                ];
+                // Try cached data first, then fallback to basic stations
+                if (cache.stations) {
+                    allStations = cache.stations.data;
+                } else {
+                    allStations = [
+                        {id: "635", name: "Times Sq-42 St", lines: ["N","Q","R","W","S","1","2","3","7"], lat: 40.7560, lon: -73.9868},
+                        {id: "902", name: "Herald Sq-34 St", lines: ["B","D","F","M","N","Q","R","W"], lat: 40.7505, lon: -73.9885},
+                        {id: "127", name: "14 St-Union Sq", lines: ["L","N","Q","R","W","4","5","6"], lat: 40.7347, lon: -73.9906}
+                    ];
+                }
                 populateStations();
                 initMap();
             }
@@ -900,8 +965,27 @@
             try {
                 // Strip direction suffix from station ID for arrivals API
                 const baseStationId = stationId.replace(/[NS]$/, '');
+                const cacheKey = getCacheKey('arrivals', { stationId: baseStationId, direction });
+
+                // Check cache first
+                if (cache.arrivals.has(cacheKey)) {
+                    const cached = cache.arrivals.get(cacheKey);
+                    if (isCacheValid(cached.timestamp, CACHE_DURATION.arrivals)) {
+                        const data = cached.data;
+                        // Use cached data but still show content below
+                    } else {
+                        cache.arrivals.delete(cacheKey);
+                    }
+                }
+
                 const response = await fetch(`/api/arrivals?stop_id=${baseStationId}&direction=${direction}`);
                 const data = await response.json();
+
+                // Cache the result
+                cache.arrivals.set(cacheKey, {
+                    data: data,
+                    timestamp: Date.now()
+                });
 
                 let html = `
                 <div class="results-section">
