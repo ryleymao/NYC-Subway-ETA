@@ -638,7 +638,7 @@
                     <div class="input-group">
                         <label for="fromSearch">From</label>
                         <input type="text" id="fromSearch" placeholder="Start typing station name or line..." oninput="debounceSearch('searchFromStations')" autocomplete="off">
-                        <select id="fromStation">
+                        <select id="fromStation" onchange="clearToSearch()">
                             <option value="">Select origin...</option>
                         </select>
                     </div>
@@ -919,6 +919,14 @@
             filterStationSelect('toStation', query);
         }
 
+        function clearToSearch() {
+            const toSearch = document.getElementById('toSearch');
+            if (toSearch) {
+                toSearch.value = '';
+                filterStationSelect('toStation', '');
+            }
+        }
+
         function filterStationSelect(selectId, query) {
             const select = document.getElementById(selectId);
             select.innerHTML = '<option value="">Select a station...</option>';
@@ -992,6 +1000,8 @@
 
         // Highlight route on map
         function highlightRouteOnMap(fromStopId, toStopId, lineColor) {
+            console.log('Highlighting route:', fromStopId, 'to', toStopId, 'color:', lineColor);
+
             // Clear existing route highlighting
             clearRouteHighlighting();
 
@@ -999,8 +1009,17 @@
             const fromStation = allStations.find(s => s.id === fromStopId.replace(/[NSEW]$/, ''));
             const toStation = allStations.find(s => s.id === toStopId.replace(/[NSEW]$/, ''));
 
+            console.log('Found stations:', fromStation, toStation);
+
             if (!fromStation || !toStation) {
                 console.warn('Could not find stations for route highlighting:', fromStopId, toStopId);
+                alert(`Could not find coordinates for stations. From: ${fromStopId}, To: ${toStopId}`);
+                return;
+            }
+
+            if (!fromStation.lat || !fromStation.lon || !toStation.lat || !toStation.lon) {
+                console.warn('Station coordinates missing:', fromStation, toStation);
+                alert('Station coordinates are missing - cannot show route on map');
                 return;
             }
 
