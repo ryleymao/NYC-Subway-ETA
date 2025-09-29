@@ -158,6 +158,36 @@
 
         #map { height: 100%; width: 100%; }
 
+        .connection-status {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+
+        .connection-status.online {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .connection-status.offline {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
         .search-section {
             margin-bottom: 32px;
         }
@@ -428,6 +458,7 @@
     <div class="main-container">
         <div class="content">
             <aside class="sidebar">
+                <div id="connectionStatus" class="connection-status online">🟢 Connected to MTA feeds</div>
                 <div class="search-section">
                     <h2 class="section-title">🚇 Live Arrivals</h2>
 
@@ -536,11 +567,40 @@
             };
         }
 
+        // Update connection status indicator
+        function updateConnectionStatus(isOnline, message) {
+            const statusEl = document.getElementById('connectionStatus');
+            if (isOnline) {
+                statusEl.className = 'connection-status online';
+                statusEl.textContent = '🟢 ' + message;
+            } else {
+                statusEl.className = 'connection-status offline';
+                statusEl.textContent = '🔴 ' + message;
+            }
+        }
+
+        // Show error message to user
+        function showError(message, element = 'arrivals') {
+            const targetEl = document.getElementById(element);
+            if (targetEl) {
+                targetEl.innerHTML = `<div class="error-message">⚠️ ${message}</div>`;
+            }
+        }
+
         // Load all stations from the API
         async function loadStations() {
             try {
+                updateConnectionStatus(true, 'Connecting to MTA feeds...');
+
                 // Use wildcard query to get all stations for map display
-                const response = await fetch('/api/stops?q=*');
+                const response = await fetch('/api/stops?q=*', {
+                    timeout: 10000 // 10 second timeout
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                }
+
                 const data = await response.json();
                 allStations = data.stops || [];
 
@@ -567,10 +627,13 @@
                     }
                 });
 
+                updateConnectionStatus(true, `Connected - ${allStations.length} stations loaded`);
                 populateStations();
                 initMap();
             } catch (error) {
                 console.error('Error loading stations:', error);
+                updateConnectionStatus(false, 'Connection failed - Using offline data');
+
                 // Fallback to basic stations if API fails
                 allStations = [
                     {id: "635", name: "Times Sq-42 St", lines: ["N","Q","R","W","S","1","2","3","7"], lat: 40.7560, lon: -73.9868},
@@ -579,6 +642,7 @@
                 ];
                 populateStations();
                 initMap();
+                showError('Unable to connect to live data. Showing basic stations only.', 'arrivals');
             }
         }
 
@@ -791,7 +855,14 @@
             try {
                 // Strip direction suffix from station ID for arrivals API
                 const baseStationId = stationId.replace(/[NS]$/, '');
-                const response = await fetch(`/api/arrivals?stop_id=${baseStationId}&direction=${direction}`);
+                const response = await fetch(`/api/arrivals?stop_id=${baseStationId}&direction=${direction}`, {
+                    timeout: 8000 // 8 second timeout
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                }
+
                 const data = await response.json();
 
                 let html = `
@@ -831,7 +902,22 @@
                 }
             } catch (error) {
                 console.error('Error fetching arrivals:', error);
-                document.getElementById('results').innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545;">Error loading arrivals</div>';
+                updateConnectionStatus(false, 'Failed to get live arrivals');
+
+                let errorMessage = 'Unable to load live arrivals';
+                if (error.message.includes('timeout')) {
+                    errorMessage = 'Request timed out - server may be busy';
+                } else if (error.message.includes('500')) {
+                    errorMessage = 'Server error - try again in a moment';
+                } else if (error.message.includes('Network')) {
+                    errorMessage = 'Network connection error';
+                }
+
+                document.getElementById('results').innerHTML = `
+                    <div class="error-message">
+                        ⚠️ ${errorMessage}
+                        <br><small>Try selecting a different station or check your connection</small>
+                    </div>`;
             }
         }
 
