@@ -55,7 +55,7 @@ class RoutePlanner:
         from_stop_id: str,
         to_stop_id: str,
         db: Session,
-        max_transfers: int = 3
+        max_transfers: int = 2  # Reduced from 3 to 2
     ) -> Optional[RouteResponse]:
         """
         Find the best route using Dijkstra with live first-leg overlay
@@ -81,9 +81,10 @@ class RoutePlanner:
         if from_stop_id == to_stop_id:
             return RouteResponse(legs=[], transfers=0, total_eta_s=0, alerts=[])
 
-        # Try all combinations of origin and destination directions to find the best route
+        # Prioritize direct routes first - try fewer transfer options
         best_route = None
         best_cost = float('inf')
+        best_transfers = float('inf')
 
         for from_dir in from_options:
             for to_dir in to_options:
@@ -91,24 +92,49 @@ class RoutePlanner:
                 if from_dir == to_dir:
                     continue
 
-                # For platform transfers within same station, allow if different directions
+                # Check if this is the same station - prefer avoiding intra-station transfers
                 base_from = from_dir.rstrip('NSEW')
                 base_to = to_dir.rstrip('NSEW')
-                if base_from == base_to and from_dir != to_dir:
-                    # This is a platform transfer - allow it but process specially
-                    pass
+                if base_from == base_to:
+                    # Same station but different platforms - skip unless no other options
+                    continue
 
                 logger.info(f"Trying route from {from_dir} to {to_dir}")
                 path = self._dijkstra(from_dir, to_dir, max_transfers)
 
                 if path:
-                    # Calculate total cost for this path
+                    # Count actual transfers (not platform changes)
+                    transfer_count = sum(1 for edge in path if edge[4])  # edge[4] is is_transfer
+
+                    # Calculate total cost with heavy transfer penalty
                     total_cost = sum(edge[3] for edge in path)  # edge[3] is travel_time
 
-                    if total_cost < best_cost:
+                    # Prioritize routes with fewer transfers
+                    if (transfer_count < best_transfers or
+                        (transfer_count == best_transfers and total_cost < best_cost)):
                         best_cost = total_cost
                         best_route = path
-                        logger.info(f"Found better route from {from_dir} to {to_dir} with cost {total_cost}")
+                        best_transfers = transfer_count
+                        logger.info(f"Found better route from {from_dir} to {to_dir} with {transfer_count} transfers, cost {total_cost}")
+
+        # If no route found without intra-station transfers, try with them
+        if not best_route:
+            logger.info("No direct route found, trying with platform transfers...")
+            for from_dir in from_options:
+                for to_dir in to_options:
+                    if from_dir == to_dir:
+                        continue
+
+                    path = self._dijkstra(from_dir, to_dir, max_transfers)
+                    if path:
+                        transfer_count = sum(1 for edge in path if edge[4])
+                        total_cost = sum(edge[3] for edge in path)
+
+                        if (transfer_count < best_transfers or
+                            (transfer_count == best_transfers and total_cost < best_cost)):
+                            best_cost = total_cost
+                            best_route = path
+                            best_transfers = transfer_count
 
         if not best_route:
             logger.warning(f"No path found from {from_stop_id} to {to_stop_id}")
@@ -122,13 +148,8 @@ class RoutePlanner:
         # Calculate total time and transfers
         total_eta_s = sum(leg.board_in_s + leg.run_s for leg in legs)
 
-        # Count actual transfers (route changes), not just legs after the first
-        transfers = 0
-        if len(legs) > 1:
-            for i in range(1, len(legs)):
-                # Only count as transfer if route_id is different from previous leg
-                if legs[i].route_id != legs[i-1].route_id:
-                    transfers += 1
+        # Count actual transfers (route changes only)
+        transfers = sum(1 for leg in legs if leg.transfer)
 
         # TODO: Get alerts for affected routes
         alerts = []
@@ -181,8 +202,15 @@ class RoutePlanner:
                     if next_transfers > max_transfers:
                         continue
 
-                    # Calculate edge cost
-                    edge_cost = conn['travel_time'] + conn['transfer_penalty']
+                    # Calculate edge cost with heavy transfer penalty
+                    base_cost = conn['travel_time']
+                    transfer_penalty = conn['transfer_penalty']
+
+                    # Add significant penalty for transfers to discourage them
+                    if is_transfer:
+                        transfer_penalty += 600  # Additional 10 minutes penalty for transfers
+
+                    edge_cost = base_cost + transfer_penalty
                     new_cost = cost + edge_cost
 
                     new_state = (next_stop, next_transfers)
@@ -210,15 +238,23 @@ class RoutePlanner:
         if not path:
             return None
 
-        legs = []
+        # First, consolidate consecutive segments on the same route into single legs
+        consolidated_segments = self._consolidate_same_route_segments(path)
 
-        for i, (from_stop, to_stop, route_id, travel_time, is_transfer) in enumerate(path):
+        legs = []
+        for i, segment in enumerate(consolidated_segments):
+            from_stop = segment['from_stop']
+            to_stop = segment['to_stop']
+            route_id = segment['route_id']
+            total_travel_time = segment['travel_time']
+            is_transfer = segment['is_transfer']
+
             # Skip transfer edges (they don't represent actual travel)
             if is_transfer:
                 continue
 
             # For first leg, try to get live boarding time
-            board_in_s = travel_time  # Default to scheduled time
+            board_in_s = total_travel_time  # Default to scheduled time
             if i == 0:  # First leg
                 live_board_time = await self._get_live_boarding_time(from_stop, route_id)
                 if live_board_time is not None:
@@ -229,7 +265,12 @@ class RoutePlanner:
             to_name = await self._get_stop_name(to_stop, db)
             direction = self._get_direction_name(from_stop, to_stop)
             line_color = self._get_line_color(route_id)
-            instruction = self._create_instruction(route_id, from_name, to_name, direction, board_in_s, travel_time, (i > 0))
+            instruction = self._create_instruction(route_id, from_name, to_name, direction, board_in_s, total_travel_time, (i > 0))
+
+            # Only mark as transfer if it's a different route from the previous leg
+            is_actual_transfer = False
+            if i > 0 and len(legs) > 0:
+                is_actual_transfer = (route_id != legs[-1].route_id)
 
             legs.append(RouteLeg(
                 route_id=route_id,
@@ -238,14 +279,77 @@ class RoutePlanner:
                 from_stop_name=from_name,
                 to_stop_name=to_name,
                 board_in_s=board_in_s,
-                run_s=travel_time,
-                transfer=(i > 0),  # First leg is never a transfer
+                run_s=total_travel_time,
+                transfer=is_actual_transfer,
                 direction=direction,
                 line_color=line_color,
                 instruction=instruction
             ))
 
         return legs
+
+    def _consolidate_same_route_segments(
+        self,
+        path: List[Tuple[str, str, str, int, bool]]
+    ) -> List[Dict]:
+        """
+        Consolidate consecutive segments on the same route into single journey legs.
+        This prevents showing multiple "transfers" when riding the same line through multiple stops.
+        """
+        if not path:
+            return []
+
+        consolidated = []
+        current_segment = None
+
+        for from_stop, to_stop, route_id, travel_time, is_transfer in path:
+            # Handle actual transfers (between different routes)
+            if is_transfer:
+                # If we have an ongoing segment, close it
+                if current_segment:
+                    consolidated.append(current_segment)
+                    current_segment = None
+
+                # Add the transfer as a separate segment
+                consolidated.append({
+                    'from_stop': from_stop,
+                    'to_stop': to_stop,
+                    'route_id': route_id,
+                    'travel_time': travel_time,
+                    'is_transfer': True
+                })
+                continue
+
+            # Handle regular route segments
+            if current_segment is None:
+                # Start a new segment
+                current_segment = {
+                    'from_stop': from_stop,
+                    'to_stop': to_stop,
+                    'route_id': route_id,
+                    'travel_time': travel_time,
+                    'is_transfer': False
+                }
+            elif current_segment['route_id'] == route_id:
+                # Same route - extend the current segment
+                current_segment['to_stop'] = to_stop
+                current_segment['travel_time'] += travel_time
+            else:
+                # Different route - close current segment and start new one
+                consolidated.append(current_segment)
+                current_segment = {
+                    'from_stop': from_stop,
+                    'to_stop': to_stop,
+                    'route_id': route_id,
+                    'travel_time': travel_time,
+                    'is_transfer': False
+                }
+
+        # Add the final segment if it exists
+        if current_segment:
+            consolidated.append(current_segment)
+
+        return consolidated
 
     async def _get_live_boarding_time(
         self,
@@ -370,7 +474,11 @@ class RoutePlanner:
         if is_transfer:
             return f"Transfer to {route_id} train {direction.lower()} to {to_name} ({travel_desc} ride, next train in {wait_desc})"
         else:
-            return f"Take {route_id} train {direction.lower()} to {to_name} ({travel_desc} ride, next train in {wait_desc})"
+            # For same-line journeys, emphasize it's one continuous ride
+            if from_name != to_name:
+                return f"Take {route_id} train {direction.lower()} from {from_name} to {to_name} ({travel_desc} ride, next train in {wait_desc})"
+            else:
+                return f"Take {route_id} train {direction.lower()} to {to_name} ({travel_desc} ride, next train in {wait_desc})"
 
     def clear_graph_cache(self):
         """Clear the loaded graph cache (for testing or updates)"""
