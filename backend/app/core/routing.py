@@ -269,6 +269,19 @@ class RoutePlanner:
             logger.error(f"Error getting live boarding time for {stop_id} route {route_id}: {e}")
             return None
 
+    async def get_station_status(self, stop_id: str) -> dict:
+        """Get station operational status and accessibility info"""
+        try:
+            # This could be expanded to include real MTA service alerts
+            return {
+                "operational": True,
+                "accessible": True,  # Could be enhanced with GTFS accessibility data
+                "alerts": []
+            }
+        except Exception as e:
+            logger.error(f"Error getting station status for {stop_id}: {e}")
+            return {"operational": False, "accessible": False, "alerts": []}
+
     async def _get_stop_name(self, stop_id: str, db: Session) -> str:
         """Get the human-readable name for a stop"""
         try:
