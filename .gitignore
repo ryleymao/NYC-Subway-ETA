@@ -91,6 +91,13 @@ mta_api_key.txt
 # Performance/benchmark results
 benchmark_results/
 performance_logs/
+*.prof
+*.pstats
+memory_usage.dat
+
+# Frontend caching
+frontend/.cache/
+frontend/dist/
 
 # Docker volumes
 postgres-data/
