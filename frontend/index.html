@@ -1289,9 +1289,7 @@
 
                     route.legs.forEach((leg, index) => {
                         html += `
-                            <div class="route-step ${leg.transfer ? 'transfer-step' : ''}"
-                                 onclick="highlightRouteOnMap('${leg.from_stop_id}', '${leg.to_stop_id}', '${leg.line_color || '#6D6E71'}')"
-                                 style="cursor: pointer;">
+                            <div class="route-step ${leg.transfer ? 'transfer-step' : ''}">
                                 <div class="step-header">
                                     <span class="route-badge line-${leg.route_id}"
                                           style="background-color: ${leg.line_color || '#6D6E71'};">${leg.route_id}</span>
@@ -1299,9 +1297,6 @@
                                 </div>
                                 <div class="step-details">
                                     ${leg.instruction || `Wait ${Math.floor(leg.board_in_s / 60)} min • Travel ${Math.floor(leg.run_s / 60)} min`}
-                                </div>
-                                <div class="step-hint">
-                                    💡 Click to see route on map
                                 </div>
                             </div>
                         `;
