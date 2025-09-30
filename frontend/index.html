@@ -227,6 +227,80 @@
             font-size: 14px;
         }
 
+        /* Icon buttons and accessibility improvements */
+        .btn-icon {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s ease;
+            min-width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-icon:hover {
+            background: var(--accent-hover);
+            transform: scale(1.05);
+        }
+
+        .btn-icon.active {
+            background: #059669;
+        }
+
+        .btn-icon.favorite {
+            background: #f59e0b;
+        }
+
+        /* Loading and progress indicators */
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Trip history and sharing */
+        .history-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+            margin: 8px 0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .history-item:hover {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .share-url {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            user-select: all;
+        }
+
         .search-section {
             margin-bottom: 32px;
         }
@@ -519,7 +593,11 @@
                         </select>
                     </div>
 
-                    <button class="btn" onclick="getArrivals()">Show Arrivals</button>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="btn" onclick="getArrivals()" style="flex: 1;" aria-label="Get live arrival times">Show Arrivals</button>
+                        <button onclick="toggleAutoRefresh()" id="refreshBtn" class="btn-icon" title="Auto-refresh every 30 seconds" aria-label="Toggle auto-refresh">⟳</button>
+                        <button onclick="toggleFavorite()" id="favoriteBtn" class="btn-icon" title="Add to favorites" aria-label="Add station to favorites">⭐</button>
+                    </div>
                 </div>
 
                 <div class="search-section">
@@ -566,6 +644,8 @@
         let markerClusterGroup;
         let selectedStation = null;
         let allStations = [];
+        let refreshInterval = null;
+        let isAutoRefreshing = false;
 
         // Theme management
         function setTheme(theme) {
@@ -1062,10 +1142,128 @@
             }
         }
 
+        // Auto-refresh functionality
+        function toggleAutoRefresh() {
+            const btn = document.getElementById('refreshBtn');
+            if (isAutoRefreshing) {
+                clearInterval(refreshInterval);
+                isAutoRefreshing = false;
+                btn.classList.remove('active');
+                btn.title = 'Auto-refresh every 30 seconds';
+            } else {
+                refreshInterval = setInterval(() => {
+                    if (document.getElementById('stationSelect').value) {
+                        getArrivals();
+                    }
+                }, 30000);
+                isAutoRefreshing = true;
+                btn.classList.add('active');
+                btn.title = 'Stop auto-refresh';
+            }
+        }
+
+        // Favorites functionality
+        function toggleFavorite() {
+            const stationId = document.getElementById('stationSelect').value;
+            if (!stationId) return;
+
+            const favorites = JSON.parse(localStorage.getItem('favoriteStations') || '[]');
+            const station = allStations.find(s => s.id === stationId);
+            const btn = document.getElementById('favoriteBtn');
+
+            if (favorites.some(f => f.id === stationId)) {
+                const filtered = favorites.filter(f => f.id !== stationId);
+                localStorage.setItem('favoriteStations', JSON.stringify(filtered));
+                btn.classList.remove('favorite');
+                btn.textContent = '⭐';
+            } else {
+                favorites.push(station);
+                localStorage.setItem('favoriteStations', JSON.stringify(favorites));
+                btn.classList.add('favorite');
+                btn.textContent = '★';
+            }
+        }
+
+        // Trip sharing functionality
+        function shareTrip(fromId, toId) {
+            const url = new URL(window.location);
+            url.searchParams.set('from', fromId);
+            url.searchParams.set('to', toId);
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'NYC Subway Route',
+                    url: url.toString()
+                });
+            } else {
+                navigator.clipboard.writeText(url.toString());
+                alert('Route URL copied to clipboard!');
+            }
+        }
+
+        // Trip history functionality
+        function saveToHistory(from, to) {
+            const history = JSON.parse(localStorage.getItem('tripHistory') || '[]');
+            const trip = {
+                from: allStations.find(s => s.id === from),
+                to: allStations.find(s => s.id === to),
+                timestamp: Date.now()
+            };
+
+            history.unshift(trip);
+            const uniqueHistory = history.filter((trip, index, arr) =>
+                index === arr.findIndex(t => t.from.id === trip.from.id && t.to.id === trip.to.id)
+            ).slice(0, 5);
+
+            localStorage.setItem('tripHistory', JSON.stringify(uniqueHistory));
+        }
+
+        // Enhanced keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 'r':
+                        e.preventDefault();
+                        if (document.getElementById('stationSelect').value) {
+                            getArrivals();
+                        }
+                        break;
+                    case 'f':
+                        e.preventDefault();
+                        document.getElementById('stationSearch').focus();
+                        break;
+                    case 's':
+                        e.preventDefault();
+                        const fromId = document.getElementById('fromStation').value;
+                        const toId = document.getElementById('toStation').value;
+                        if (fromId && toId) {
+                            shareTrip(fromId, toId);
+                        }
+                        break;
+                }
+            }
+        });
+
+        // URL parameter handling for shared routes
+        function handleURLParams() {
+            const params = new URLSearchParams(window.location.search);
+            const fromId = params.get('from');
+            const toId = params.get('to');
+
+            if (fromId && toId) {
+                setTimeout(() => {
+                    document.getElementById('fromStation').value = fromId;
+                    document.getElementById('toStation').value = toId;
+                    planTrip();
+                }, 1000);
+            }
+        }
+
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
             loadTheme();
             loadStations();
+            handleURLParams();
         });
     </script>
 </body>
