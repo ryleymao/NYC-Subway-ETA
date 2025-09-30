@@ -95,3 +95,12 @@ performance_logs/
 # Docker volumes
 postgres-data/
 redis-data/
+
+# Performance profiling
+*.prof
+*.pstats
+memory_usage.dat
+
+# Frontend caching
+frontend/.cache/
+frontend/dist/
