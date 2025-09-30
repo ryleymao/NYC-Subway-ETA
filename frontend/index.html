@@ -1,140 +1,253 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
+    <title>NYC Subway ETA</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NYC Subway ETA</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
-        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
-        .header { text-align: center; margin-bottom: 20px; }
-        .content { display: grid; grid-template-columns: 300px 1fr; gap: 20px; }
-        .sidebar { background: #f9f9f9; padding: 20px; border-radius: 6px; }
-        .map-container { height: 500px; }
-        #map { height: 100%; width: 100%; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #0052a3; }
-        #results { margin-top: 20px; padding: 15px; background: white; border-radius: 6px; }
-        .arrival-item { padding: 10px; margin: 5px 0; background: #f0f8ff; border-left: 4px solid #0066cc; }
-        .route-badge { background: #0066cc; color: white; padding: 2px 6px; border-radius: 3px; margin-right: 8px; }
-        @media (max-width: 768px) { .content { grid-template-columns: 1fr; } }
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: #f8f9fa;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #007cba, #005a87);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 { 
+            margin: 0;
+            font-size: 2.2em;
+            font-weight: 300;
+        }
+        .content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            height: 600px;
+        }
+        .sidebar {
+            padding: 20px;
+            border-right: 1px solid #eee;
+            background: #fafbfc;
+        }
+        .form-group { 
+            margin-bottom: 15px; 
+        }
+        label { 
+            display: block; 
+            margin-bottom: 5px; 
+            color: #333;
+            font-weight: 500;
+        }
+        select, button { 
+            padding: 12px; 
+            width: 100%; 
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        select {
+            background: white;
+        }
+        button { 
+            background: #007cba; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            margin-top: 10px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        button:hover { 
+            background: #005a87; 
+        }
+        #map { 
+            height: 100%; 
+            width: 100%;
+        }
+        #results { 
+            margin-top: 20px; 
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .arrival { 
+            padding: 12px; 
+            margin: 8px 0; 
+            background: white; 
+            border-left: 4px solid #007cba;
+            border-radius: 0 4px 4px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .route-badge {
+            background: #007cba;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            .sidebar {
+                border-right: none;
+                border-bottom: 1px solid #eee;
+            }
+            #map {
+                height: 400px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <header class="header">
-            <h1>🚇 NYC Subway ETA</h1>
-        </header>
+        <div class="header">
+            <h1>🚇 NYC Subway Live</h1>
+        </div>
+        
         <div class="content">
-            <aside class="sidebar">
+            <div class="sidebar">
                 <div class="form-group">
-                    <label for="stationSearch">Search Station:</label>
-                    <input type="text" id="stationSearch" placeholder="Type station name...">
-                </div>
-                <div class="form-group">
-                    <label for="stationSelect">Select Station:</label>
-                    <select id="stationSelect">
+                    <label for="station">Select Station:</label>
+                    <select id="station">
                         <option value="">Choose a station...</option>
+                        <option value="635">Times Square-42nd Street</option>
+                        <option value="902">Herald Square-34th Street</option>
+                        <option value="127">Union Square-14th Street</option>
+                        <option value="232">Grand Central-42nd Street</option>
+                        <option value="420">Canal Street</option>
+                        <option value="629">59th Street-Columbus Circle</option>
+                        <option value="D14">14th Street-8th Avenue</option>
                     </select>
                 </div>
+                
                 <div class="form-group">
-                    <label for="directionSelect">Direction:</label>
-                    <select id="directionSelect">
+                    <label for="direction">Direction:</label>
+                    <select id="direction">
                         <option value="N">Northbound</option>
                         <option value="S">Southbound</option>
                     </select>
                 </div>
-                <button onclick="getArrivals()">Get Arrivals</button>
+                
+                <button onclick="getArrivals()">Get Live Arrivals</button>
+                
                 <div id="results"></div>
-            </aside>
-            <main class="map-container">
-                <div id="map"></div>
-            </main>
+            </div>
+            
+            <div id="map"></div>
         </div>
     </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        let map, allStations = [];
+        let map;
+        
         function initMap() {
             map = L.map('map').setView([40.7589, -73.9851], 12);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        }
-        async function loadStations() {
-            try {
-                const response = await fetch('/api/stops?q=*');
-                const data = await response.json();
-                allStations = data.stops || [];
-                if (allStations.length === 0) {
-                    allStations = [
-                        {id: "635", name: "Times Sq-42 St"},
-                        {id: "902", name: "Herald Sq-34 St"},
-                        {id: "127", name: "14 St-Union Sq"}
-                    ];
-                }
-                populateStationSelect();
-            } catch (error) {
-                allStations = [
-                    {id: "635", name: "Times Sq-42 St"},
-                    {id: "902", name: "Herald Sq-34 St"},
-                    {id: "127", name: "14 St-Union Sq"}
-                ];
-                populateStationSelect();
-            }
-        }
-        function populateStationSelect() {
-            const select = document.getElementById('stationSelect');
-            select.innerHTML = '<option value="">Choose a station...</option>';
-            allStations.forEach(station => {
-                const option = document.createElement('option');
-                option.value = station.id;
-                option.textContent = station.name;
-                select.appendChild(option);
+            
+            // Clean CartoDB map tiles
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '© OpenStreetMap © CartoDB',
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(map);
+            
+            // Add station markers
+            const stations = [
+                {id: "635", name: "Times Square", lat: 40.7560, lon: -73.9868, lines: ["N","Q","R","W","S","1","2","3","7"]},
+                {id: "902", name: "Herald Square", lat: 40.7505, lon: -73.9885, lines: ["B","D","F","M","N","Q","R","W"]},
+                {id: "127", name: "Union Square", lat: 40.7347, lon: -73.9906, lines: ["L","N","Q","R","W","4","5","6"]},
+                {id: "232", name: "Grand Central", lat: 40.7527, lon: -73.9772, lines: ["4","5","6","7","S"]},
+                {id: "420", name: "Canal Street", lat: 40.7189, lon: -73.9998, lines: ["J","Z","N","Q","R","W","6"]},
+                {id: "629", name: "Columbus Circle", lat: 40.7685, lon: -73.9815, lines: ["A","B","C","D","1"]},
+                {id: "D14", name: "14th St-8th Ave", lat: 40.7374, lon: -73.9951, lines: ["A","C","E","L"]}
+            ];
+            
+            stations.forEach(station => {
+                // Create custom icon
+                const icon = L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div style="background: #007cba; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">🚇</div>`,
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                });
+                
+                const marker = L.marker([station.lat, station.lon], { icon }).addTo(map);
+                
+                const linesHtml = station.lines.map(line => 
+                    `<span style="background: #007cba; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; margin-right: 4px;">${line}</span>`
+                ).join('');
+                
+                marker.bindPopup(`
+                    <div style="text-align: center; min-width: 150px;">
+                        <h4 style="margin: 0 0 8px 0;">${station.name}</h4>
+                        <div style="margin-bottom: 8px;">${linesHtml}</div>
+                        <button onclick="selectStation('${station.id}')" style="padding: 4px 12px; background: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer;">Select Station</button>
+                    </div>
+                `);
             });
         }
-        document.getElementById('stationSearch').addEventListener('input', function() {
-            const query = this.value.toLowerCase();
-            const select = document.getElementById('stationSelect');
-            const filtered = allStations.filter(station => station.name.toLowerCase().includes(query));
-            select.innerHTML = '<option value="">Choose a station...</option>';
-            filtered.forEach(station => {
-                const option = document.createElement('option');
-                option.value = station.id;
-                option.textContent = station.name;
-                select.appendChild(option);
-            });
-        });
+        
+        function selectStation(stationId) {
+            document.getElementById('station').value = stationId;
+            map.closePopup();
+        }
+        
         async function getArrivals() {
-            const stationId = document.getElementById('stationSelect').value;
-            const direction = document.getElementById('directionSelect').value;
-            const resultsDiv = document.getElementById('results');
-            if (!stationId) { alert('Please select a station'); return; }
-            resultsDiv.innerHTML = '<div>Loading arrivals...</div>';
+            const station = document.getElementById('station').value;
+            const direction = document.getElementById('direction').value;
+            const results = document.getElementById('results');
+            
+            if (!station) {
+                alert('Please select a station');
+                return;
+            }
+            
+            results.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Loading arrivals...</div>';
+            
             try {
-                const response = await fetch(`/api/arrivals?stop_id=${stationId}&direction=${direction}`);
+                const response = await fetch(`/api/arrivals?stop_id=${station}&direction=${direction}`);
                 const data = await response.json();
+                
                 if (data.arrivals && data.arrivals.length > 0) {
-                    let html = '<h3>Live Arrivals</h3>';
+                    let html = '<h3 style="margin: 0 0 10px 0; color: #333;">Live Arrivals:</h3>';
                     data.arrivals.forEach(arrival => {
                         const minutes = Math.floor(arrival.eta_s / 60);
-                        const timeText = minutes <= 0 ? 'Now' : `${minutes} min`;
-                        html += `<div class="arrival-item"><span class="route-badge">${arrival.route_id}</span>${arrival.headsign} - <strong>${timeText}</strong></div>`;
+                        const time = minutes <= 0 ? 'Now' : `${minutes} min`;
+                        html += `
+                            <div class="arrival">
+                                <span class="route-badge">${arrival.route_id}</span>
+                                <strong>${arrival.headsign}</strong><br>
+                                <small style="color: #007cba; font-weight: bold;">${time}</small>
+                            </div>
+                        `;
                     });
-                    resultsDiv.innerHTML = html;
+                    results.innerHTML = html;
                 } else {
-                    resultsDiv.innerHTML = '<div>No arrivals found</div>';
+                    results.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">No arrivals found for this station and direction.</div>';
                 }
             } catch (error) {
-                resultsDiv.innerHTML = '<div>Error loading arrivals</div>';
+                results.innerHTML = '<div style="text-align: center; padding: 20px; color: #d32f2f;">Error loading arrivals. Please try again.</div>';
+                console.error('Error:', error);
             }
         }
-        document.addEventListener('DOMContentLoaded', function() {
-            initMap();
-            loadStations();
-        });
+        
+        // Initialize map when page loads
+        document.addEventListener('DOMContentLoaded', initMap);
     </script>
 </body>
 </html>
