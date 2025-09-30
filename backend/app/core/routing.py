@@ -239,7 +239,14 @@ class RoutePlanner:
             return None
 
         # First, consolidate consecutive segments on the same route into single legs
+        logger.info(f"Raw path has {len(path)} segments")
+        for i, (from_stop, to_stop, route_id, travel_time, is_transfer) in enumerate(path):
+            logger.info(f"  Raw {i}: {from_stop} -> {to_stop} (route: {route_id}, transfer: {is_transfer})")
+
         consolidated_segments = self._consolidate_same_route_segments(path)
+        logger.info(f"Consolidated into {len(consolidated_segments)} segments")
+        for i, segment in enumerate(consolidated_segments):
+            logger.info(f"  Consolidated {i}: {segment['from_stop']} -> {segment['to_stop']} (route: {segment['route_id']})")
 
         legs = []
         for i, segment in enumerate(consolidated_segments):
@@ -300,54 +307,54 @@ class RoutePlanner:
             return []
 
         consolidated = []
-        current_segment = None
 
-        for from_stop, to_stop, route_id, travel_time, is_transfer in path:
-            # Handle actual transfers (between different routes)
-            if is_transfer:
-                # If we have an ongoing segment, close it
-                if current_segment:
-                    consolidated.append(current_segment)
-                    current_segment = None
+        # Group consecutive segments by route
+        i = 0
+        while i < len(path):
+            from_stop, to_stop, route_id, travel_time, is_transfer = path[i]
 
-                # Add the transfer as a separate segment
-                consolidated.append({
-                    'from_stop': from_stop,
-                    'to_stop': to_stop,
-                    'route_id': route_id,
-                    'travel_time': travel_time,
-                    'is_transfer': True
-                })
+            # Skip pure transfer/platform edges
+            if route_id in ['PLATFORM_TRANSFER', 'TRANSFER']:
+                i += 1
                 continue
 
-            # Handle regular route segments
-            if current_segment is None:
-                # Start a new segment
-                current_segment = {
-                    'from_stop': from_stop,
-                    'to_stop': to_stop,
-                    'route_id': route_id,
-                    'travel_time': travel_time,
-                    'is_transfer': False
-                }
-            elif current_segment['route_id'] == route_id:
-                # Same route - extend the current segment
-                current_segment['to_stop'] = to_stop
-                current_segment['travel_time'] += travel_time
-            else:
-                # Different route - close current segment and start new one
-                consolidated.append(current_segment)
-                current_segment = {
-                    'from_stop': from_stop,
-                    'to_stop': to_stop,
-                    'route_id': route_id,
-                    'travel_time': travel_time,
-                    'is_transfer': False
-                }
+            # Start a new journey segment
+            journey_from = from_stop
+            journey_to = to_stop
+            journey_route = route_id
+            journey_time = travel_time
+            journey_is_transfer = is_transfer and route_id not in ['PLATFORM_TRANSFER', 'TRANSFER']
 
-        # Add the final segment if it exists
-        if current_segment:
-            consolidated.append(current_segment)
+            # Look ahead and consolidate consecutive segments on the same route
+            j = i + 1
+            while j < len(path):
+                next_from, next_to, next_route, next_time, next_is_transfer = path[j]
+
+                # Skip platform/transfer edges
+                if next_route in ['PLATFORM_TRANSFER', 'TRANSFER']:
+                    j += 1
+                    continue
+
+                # If same route, extend the journey (consecutive stops on same line)
+                if next_route == journey_route:
+                    journey_to = next_to
+                    journey_time += next_time
+                    j += 1
+                else:
+                    # Different route or actual transfer - stop consolidating
+                    break
+
+            # Add the consolidated journey segment
+            consolidated.append({
+                'from_stop': journey_from,
+                'to_stop': journey_to,
+                'route_id': journey_route,
+                'travel_time': journey_time,
+                'is_transfer': journey_is_transfer
+            })
+
+            # Move to the next unprocessed segment
+            i = j
 
         return consolidated
 
