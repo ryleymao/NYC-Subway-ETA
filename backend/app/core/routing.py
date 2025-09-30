@@ -267,7 +267,7 @@ class RoutePlanner:
             to_name = await self._get_stop_name(to_stop, db)
             direction = self._get_direction_name(from_stop, to_stop)
             line_color = self._get_line_color(route_id)
-            instruction = self._create_instruction(route_id, from_name, to_name, direction, board_in_s, total_travel_time, (i > 0))
+            instruction = self._create_instruction(route_id, from_name, to_name, direction, board_in_s, total_travel_time, is_transfer)
 
             # Use the transfer flag from consolidation
             is_actual_transfer = is_transfer
