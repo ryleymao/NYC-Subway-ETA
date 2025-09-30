@@ -990,57 +990,147 @@
             getArrivals();
         }
 
+        // Show message to user
+        function showMessage(message, type = 'info') {
+            // Create or get existing message container
+            let messageContainer = document.getElementById('message-container');
+            if (!messageContainer) {
+                messageContainer = document.createElement('div');
+                messageContainer.id = 'message-container';
+                messageContainer.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    z-index: 10000;
+                    max-width: 300px;
+                `;
+                document.body.appendChild(messageContainer);
+            }
+
+            // Create message element
+            const messageEl = document.createElement('div');
+            messageEl.style.cssText = `
+                background: ${type === 'success' ? '#10b981' : type === 'warning' ? '#f59e0b' : type === 'error' ? '#ef4444' : '#3b82f6'};
+                color: white;
+                padding: 12px 16px;
+                border-radius: 8px;
+                margin-bottom: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                font-size: 14px;
+                opacity: 0;
+                transform: translateX(100%);
+                transition: all 0.3s ease;
+            `;
+            messageEl.textContent = message;
+
+            // Add to container
+            messageContainer.appendChild(messageEl);
+
+            // Animate in
+            setTimeout(() => {
+                messageEl.style.opacity = '1';
+                messageEl.style.transform = 'translateX(0)';
+            }, 10);
+
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                messageEl.style.opacity = '0';
+                messageEl.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (messageEl.parentNode) {
+                        messageEl.parentNode.removeChild(messageEl);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
         // Highlight route on map
         function highlightRouteOnMap(fromStopId, toStopId, lineColor) {
+            console.log('Highlighting route:', fromStopId, 'to', toStopId, 'with color', lineColor);
+
             // Clear existing route highlighting
             clearRouteHighlighting();
 
-            // Get station coordinates
-            const fromStation = allStations.find(s => s.id === fromStopId.replace(/[NSEW]$/, ''));
-            const toStation = allStations.find(s => s.id === toStopId.replace(/[NSEW]$/, ''));
-
-            if (!fromStation || !toStation) {
-                console.warn('Could not find stations for route highlighting:', fromStopId, toStopId);
+            // Check if allStations is loaded
+            if (!allStations || allStations.length === 0) {
+                console.warn('Stations not loaded yet. Trying to load...');
+                // Try to load stations first
+                loadStations().then(() => {
+                    highlightRouteOnMap(fromStopId, toStopId, lineColor);
+                });
                 return;
             }
 
-            // Draw route line on map
-            const routeLine = L.polyline([
-                [fromStation.lat, fromStation.lon],
-                [toStation.lat, toStation.lon]
-            ], {
-                color: lineColor,
-                weight: 6,
-                opacity: 0.8,
-                className: 'route-highlight'
-            }).addTo(map);
+            // Get station coordinates - remove directional suffix
+            const fromBaseId = fromStopId.replace(/[NSEW]$/, '');
+            const toBaseId = toStopId.replace(/[NSEW]$/, '');
 
-            // Add special markers for route endpoints
-            const routeStartIcon = L.divIcon({
-                className: 'route-marker route-start',
-                html: '🚇',
-                iconSize: [25, 25],
-                iconAnchor: [12, 12]
-            });
+            const fromStation = allStations.find(s => s.id === fromBaseId);
+            const toStation = allStations.find(s => s.id === toBaseId);
 
-            const routeEndIcon = L.divIcon({
-                className: 'route-marker route-end',
-                html: '🎯',
-                iconSize: [25, 25],
-                iconAnchor: [12, 12]
-            });
+            console.log('From station:', fromStation);
+            console.log('To station:', toStation);
 
-            const startMarker = L.marker([fromStation.lat, fromStation.lon], { icon: routeStartIcon }).addTo(map);
-            const endMarker = L.marker([toStation.lat, toStation.lon], { icon: routeEndIcon }).addTo(map);
+            if (!fromStation || !toStation) {
+                console.warn('Could not find stations for route highlighting:', fromStopId, toStopId);
+                console.log('Available stations:', allStations.map(s => s.id).slice(0, 10));
 
-            // Store for cleanup
-            window.currentRouteHighlights = [routeLine, startMarker, endMarker];
+                // Show a message to the user
+                showMessage('Unable to show route on map - station data not found', 'warning');
+                return;
+            }
 
-            // Fit map to show the route
-            map.fitBounds([
-                [fromStation.lat, fromStation.lon],
-                [toStation.lat, toStation.lon]
-            ], { padding: [20, 20] });
+            // Ensure lineColor is valid
+            if (!lineColor || lineColor === 'undefined') {
+                lineColor = '#6D6E71';
+            }
+
+            try {
+                // Draw route line on map
+                const routeLine = L.polyline([
+                    [fromStation.lat, fromStation.lon],
+                    [toStation.lat, toStation.lon]
+                ], {
+                    color: lineColor,
+                    weight: 6,
+                    opacity: 0.8,
+                    className: 'route-highlight'
+                }).addTo(map);
+
+                // Add special markers for route endpoints
+                const routeStartIcon = L.divIcon({
+                    className: 'route-marker route-start',
+                    html: '🚇',
+                    iconSize: [25, 25],
+                    iconAnchor: [12, 12]
+                });
+
+                const routeEndIcon = L.divIcon({
+                    className: 'route-marker route-end',
+                    html: '🎯',
+                    iconSize: [25, 25],
+                    iconAnchor: [12, 12]
+                });
+
+                const startMarker = L.marker([fromStation.lat, fromStation.lon], { icon: routeStartIcon }).addTo(map);
+                const endMarker = L.marker([toStation.lat, toStation.lon], { icon: routeEndIcon }).addTo(map);
+
+                // Store for cleanup
+                window.currentRouteHighlights = [routeLine, startMarker, endMarker];
+
+                // Fit map to show the route
+                map.fitBounds([
+                    [fromStation.lat, fromStation.lon],
+                    [toStation.lat, toStation.lon]
+                ], { padding: [50, 50] });
+
+                console.log('Route highlighted successfully');
+                showMessage('Route highlighted on map!', 'success');
+
+            } catch (error) {
+                console.error('Error highlighting route:', error);
+                showMessage('Error highlighting route on map', 'error');
+            }
         }
 
         // Clear route highlighting
