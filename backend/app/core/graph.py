@@ -177,18 +177,21 @@ class StationGraphBuilder:
                 if platform_id in self.graph:
                     platforms.append(platform_id)
 
-            # Create bidirectional transfers between all platforms at this station
-            for i, from_platform in enumerate(platforms):
-                for j, to_platform in enumerate(platforms):
-                    if i != j:  # Don't transfer to yourself
-                        # Platform-to-platform transfer (e.g., 106N -> 106S)
-                        self.graph[from_platform][to_platform].append({
-                            'route_id': 'PLATFORM_TRANSFER',
-                            'travel_time': 0,
-                            'is_transfer': True,
-                            'transfer_penalty': 120  # 2 minutes to change platforms
-                        })
-                        count += 1
+            # Only create transfers if there are actual routes serving different platforms
+            # This prevents unnecessary platform transfers when direct routes exist
+            if len(platforms) > 1:
+                for i, from_platform in enumerate(platforms):
+                    for j, to_platform in enumerate(platforms):
+                        if i != j:  # Don't transfer to yourself
+                            # Platform-to-platform transfer (e.g., 106N -> 106S)
+                            # Increase penalty to discourage unless necessary
+                            self.graph[from_platform][to_platform].append({
+                                'route_id': 'PLATFORM_TRANSFER',
+                                'travel_time': 0,
+                                'is_transfer': True,
+                                'transfer_penalty': 300  # 5 minutes to discourage platform transfers
+                            })
+                            count += 1
 
         logger.info(f"Built {count} intra-station platform transfers")
         return count
