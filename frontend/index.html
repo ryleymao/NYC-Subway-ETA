@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NYC Subway Live</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -185,6 +187,43 @@
             padding: 12px 16px;
             border-radius: 6px;
             margin: 16px 0;
+            font-size: 14px;
+        }
+
+        /* Custom cluster marker styles */
+        .marker-cluster {
+            background-color: var(--accent-color);
+            border: 3px solid var(--bg-primary);
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .marker-cluster-small {
+            width: 30px;
+            height: 30px;
+        }
+
+        .marker-cluster-medium {
+            width: 40px;
+            height: 40px;
+        }
+
+        .marker-cluster-large {
+            width: 50px;
+            height: 50px;
+        }
+
+        .cluster-inner {
+            color: white;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            font-size: 12px;
+        }
+
+        .marker-cluster-large .cluster-inner {
             font-size: 14px;
         }
 
@@ -520,9 +559,11 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
     <script>
         let map;
         let stationMarkers = [];
+        let markerClusterGroup;
         let selectedStation = null;
         let allStations = [];
 
@@ -584,6 +625,13 @@
             const targetEl = document.getElementById(element);
             if (targetEl) {
                 targetEl.innerHTML = `<div class="error-message">⚠️ ${message}</div>`;
+            }
+        }
+
+        // Update loading progress for marker clustering
+        function updateLoadingProgress(processed, total, elapsed) {
+            if (processed === total) {
+                updateConnectionStatus(true, `${total} stations loaded and clustered`);
             }
         }
 
@@ -656,6 +704,32 @@
                 maxZoom: 19
             }).addTo(map);
 
+            // Initialize marker cluster group with custom options
+            markerClusterGroup = L.markerClusterGroup({
+                chunkedLoading: true,
+                chunkProgress: updateLoadingProgress,
+                maxClusterRadius: 40,
+                spiderfyOnMaxZoom: true,
+                showCoverageOnHover: false,
+                zoomToBoundsOnClick: true,
+                disableClusteringAtZoom: 15,
+                iconCreateFunction: function(cluster) {
+                    const count = cluster.getChildCount();
+                    let size = 'small';
+                    if (count > 20) size = 'large';
+                    else if (count > 10) size = 'medium';
+
+                    return L.divIcon({
+                        html: `<div class="cluster-inner">${count}</div>`,
+                        className: `marker-cluster marker-cluster-${size}`,
+                        iconSize: L.point(40, 40)
+                    });
+                }
+            });
+
+            // Add cluster group to map
+            map.addLayer(markerClusterGroup);
+
             // Add station markers
             allStations.forEach(station => {
                 if (station.lat && station.lon) {
@@ -687,7 +761,7 @@
                     `;
 
                     marker.bindPopup(popupContent);
-                    marker.addTo(map);
+                    markerClusterGroup.addLayer(marker);
                     stationMarkers.push({marker, station});
 
                     marker.on('click', () => {
