@@ -55,7 +55,7 @@ class RoutePlanner:
         from_stop_id: str,
         to_stop_id: str,
         db: Session,
-        max_transfers: int = 2  # Reduced from 3 to 2
+        max_transfers: int = 1  # Further reduced to minimize transfers
     ) -> Optional[RouteResponse]:
         """
         Find the best route using Dijkstra with live first-leg overlay
@@ -148,8 +148,11 @@ class RoutePlanner:
         # Calculate total time and transfers
         total_eta_s = sum(leg.board_in_s + leg.run_s for leg in legs)
 
-        # Count actual transfers (route changes only)
-        transfers = sum(1 for leg in legs if leg.transfer)
+        # Count actual transfers (route changes only) - be more precise
+        transfers = 0
+        for i in range(1, len(legs)):
+            if legs[i].route_id != legs[i-1].route_id:
+                transfers += 1
 
         # TODO: Get alerts for affected routes
         alerts = []
@@ -208,7 +211,10 @@ class RoutePlanner:
 
                     # Add significant penalty for transfers to discourage them
                     if is_transfer:
-                        transfer_penalty += 600  # Additional 10 minutes penalty for transfers
+                        transfer_penalty += 1200  # Additional 20 minutes penalty for transfers
+                    else:
+                        # Small penalty for each segment to prefer direct routes
+                        transfer_penalty += 30  # 30 seconds penalty to minimize segments
 
                     edge_cost = base_cost + transfer_penalty
                     new_cost = cost + edge_cost
@@ -239,14 +245,7 @@ class RoutePlanner:
             return None
 
         # First, consolidate consecutive segments on the same route into single legs
-        logger.info(f"Raw path has {len(path)} segments")
-        for i, (from_stop, to_stop, route_id, travel_time, is_transfer) in enumerate(path):
-            logger.info(f"  Raw {i}: {from_stop} -> {to_stop} (route: {route_id}, transfer: {is_transfer})")
-
         consolidated_segments = self._consolidate_same_route_segments(path)
-        logger.info(f"Consolidated into {len(consolidated_segments)} segments")
-        for i, segment in enumerate(consolidated_segments):
-            logger.info(f"  Consolidated {i}: {segment['from_stop']} -> {segment['to_stop']} (route: {segment['route_id']})")
 
         legs = []
         for i, segment in enumerate(consolidated_segments):
@@ -255,10 +254,6 @@ class RoutePlanner:
             route_id = segment['route_id']
             total_travel_time = segment['travel_time']
             is_transfer = segment['is_transfer']
-
-            # Skip transfer edges (they don't represent actual travel)
-            if is_transfer:
-                continue
 
             # For first leg, try to get live boarding time
             board_in_s = total_travel_time  # Default to scheduled time
@@ -274,10 +269,8 @@ class RoutePlanner:
             line_color = self._get_line_color(route_id)
             instruction = self._create_instruction(route_id, from_name, to_name, direction, board_in_s, total_travel_time, (i > 0))
 
-            # Only mark as transfer if it's a different route from the previous leg
-            is_actual_transfer = False
-            if i > 0 and len(legs) > 0:
-                is_actual_transfer = (route_id != legs[-1].route_id)
+            # Use the transfer flag from consolidation
+            is_actual_transfer = is_transfer
 
             legs.append(RouteLeg(
                 route_id=route_id,
@@ -306,57 +299,52 @@ class RoutePlanner:
         if not path:
             return []
 
-        consolidated = []
+        # Group consecutive segments by route to minimize legs
+        # Create route groups
+        groups = []
+        current_route = None
+        current_from = None
+        current_to = None
+        current_time = 0
 
-        # Group consecutive segments by route
-        i = 0
-        while i < len(path):
-            from_stop, to_stop, route_id, travel_time, is_transfer = path[i]
-
-            # Skip pure transfer/platform edges
+        for from_stop, to_stop, route_id, travel_time, is_transfer in path:
+            # Skip walking/platform transfers
             if route_id in ['PLATFORM_TRANSFER', 'TRANSFER']:
-                i += 1
                 continue
 
-            # Start a new journey segment
-            journey_from = from_stop
-            journey_to = to_stop
-            journey_route = route_id
-            journey_time = travel_time
-            journey_is_transfer = is_transfer and route_id not in ['PLATFORM_TRANSFER', 'TRANSFER']
+            # If different route or first segment, start new group
+            if route_id != current_route:
+                # Save previous group
+                if current_route is not None:
+                    groups.append({
+                        'from_stop': current_from,
+                        'to_stop': current_to,
+                        'route_id': current_route,
+                        'travel_time': current_time,
+                        'is_transfer': len(groups) > 0  # Only first leg is not a transfer
+                    })
 
-            # Look ahead and consolidate consecutive segments on the same route
-            j = i + 1
-            while j < len(path):
-                next_from, next_to, next_route, next_time, next_is_transfer = path[j]
+                # Start new group
+                current_route = route_id
+                current_from = from_stop
+                current_to = to_stop
+                current_time = travel_time
+            else:
+                # Same route - extend the journey
+                current_to = to_stop
+                current_time += travel_time
 
-                # Skip platform/transfer edges
-                if next_route in ['PLATFORM_TRANSFER', 'TRANSFER']:
-                    j += 1
-                    continue
-
-                # If same route, extend the journey (consecutive stops on same line)
-                if next_route == journey_route:
-                    journey_to = next_to
-                    journey_time += next_time
-                    j += 1
-                else:
-                    # Different route or actual transfer - stop consolidating
-                    break
-
-            # Add the consolidated journey segment
-            consolidated.append({
-                'from_stop': journey_from,
-                'to_stop': journey_to,
-                'route_id': journey_route,
-                'travel_time': journey_time,
-                'is_transfer': journey_is_transfer
+        # Add final group
+        if current_route is not None:
+            groups.append({
+                'from_stop': current_from,
+                'to_stop': current_to,
+                'route_id': current_route,
+                'travel_time': current_time,
+                'is_transfer': len(groups) > 0
             })
 
-            # Move to the next unprocessed segment
-            i = j
-
-        return consolidated
+        return groups
 
     async def _get_live_boarding_time(
         self,
