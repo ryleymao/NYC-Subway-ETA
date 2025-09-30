@@ -75,6 +75,11 @@ Then open http://localhost:8000 for the demo interface.
 - **📱 Mobile-First**: Responsive design optimized for phones and tablets
 - **🚇 Official Subway Colors**: All NYC subway lines with authentic MTA colors
 - **⚡ Smooth Interactions**: Fast, intuitive interface with elegant transitions
+- **🔄 Auto-Refresh**: Real-time arrival updates with 30-second intervals
+- **⭐ Favorites**: Save frequently used stations with localStorage
+- **🔗 Trip Sharing**: Share routes via URL with Web Share API integration
+- **⌨️ Keyboard Shortcuts**: Power user features (Ctrl+R, Ctrl+F, Ctrl+S)
+- **🗺️ Map Clustering**: High-performance station markers with intelligent grouping
 
 **📱 Core Features**:
 - **Live Arrivals**: Real-time subway arrivals by station/direction
