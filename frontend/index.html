@@ -301,6 +301,38 @@
             user-select: all;
         }
 
+        /* Enhanced mobile optimizations */
+        @media (max-width: 768px) {
+            .btn {
+                padding: 12px 20px;
+                font-size: 16px;
+                touch-action: manipulation;
+            }
+            .btn-icon {
+                min-width: 44px;
+                height: 44px;
+                font-size: 18px;
+            }
+            .input-group input, .input-group select {
+                padding: 12px 16px;
+                font-size: 16px;
+            }
+        }
+
+        /* Performance optimizations */
+        .leaflet-container {
+            will-change: transform;
+        }
+        .marker-cluster {
+            will-change: transform;
+        }
+
+        /* Route visualization improvements */
+        .route-badge {
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            font-weight: 600;
+        }
+
         .search-section {
             margin-bottom: 32px;
         }
