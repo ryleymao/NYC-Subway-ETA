@@ -80,7 +80,7 @@ Then open http://localhost:8000 for the demo interface.
 - **Live Arrivals**: Real-time subway arrivals by station/direction
 - **Enhanced Trip Planning**: Detailed routes with station names, directions, and human-readable instructions
 - **Interactive Route Visualization**: Click route steps to highlight paths on map with official MTA line colors
-- **Transfer-Aware Routing**: Cross-line transfers between all NYC subway systems (1/2/3 ↔ 4/5/6/N/Q/R/W)
+- **Smart Transfer-Aware Routing**: Optimized routing that minimizes unnecessary transfers - same-line journeys show 0 transfers
 - **Interactive Map**: Click stations, see routes visually with color-coded lines
 - **Complete Coverage**: All 998 NYC subway stations available
 - **Real-time Updates**: Fresh data every 45 seconds from MTA feeds
