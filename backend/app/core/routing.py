@@ -236,15 +236,23 @@ class RoutePlanner:
         if not path:
             return None
 
-        legs = []
+        # First, consolidate consecutive segments on the same route into single legs
+        consolidated_segments = self._consolidate_same_route_segments(path)
 
-        for i, (from_stop, to_stop, route_id, travel_time, is_transfer) in enumerate(path):
+        legs = []
+        for i, segment in enumerate(consolidated_segments):
+            from_stop = segment['from_stop']
+            to_stop = segment['to_stop']
+            route_id = segment['route_id']
+            total_travel_time = segment['travel_time']
+            is_transfer = segment['is_transfer']
+
             # Skip transfer edges (they don't represent actual travel)
             if is_transfer:
                 continue
 
             # For first leg, try to get live boarding time
-            board_in_s = travel_time  # Default to scheduled time
+            board_in_s = total_travel_time  # Default to scheduled time
             if i == 0:  # First leg
                 live_board_time = await self._get_live_boarding_time(from_stop, route_id)
                 if live_board_time is not None:
@@ -255,7 +263,7 @@ class RoutePlanner:
             to_name = await self._get_stop_name(to_stop, db)
             direction = self._get_direction_name(from_stop, to_stop)
             line_color = self._get_line_color(route_id)
-            instruction = self._create_instruction(route_id, from_name, to_name, direction, board_in_s, travel_time, (i > 0))
+            instruction = self._create_instruction(route_id, from_name, to_name, direction, board_in_s, total_travel_time, (i > 0))
 
             legs.append(RouteLeg(
                 route_id=route_id,
@@ -264,7 +272,7 @@ class RoutePlanner:
                 from_stop_name=from_name,
                 to_stop_name=to_name,
                 board_in_s=board_in_s,
-                run_s=travel_time,
+                run_s=total_travel_time,
                 transfer=(i > 0),  # First leg is never a transfer
                 direction=direction,
                 line_color=line_color,
@@ -272,6 +280,69 @@ class RoutePlanner:
             ))
 
         return legs
+
+    def _consolidate_same_route_segments(
+        self,
+        path: List[Tuple[str, str, str, int, bool]]
+    ) -> List[Dict]:
+        """
+        Consolidate consecutive segments on the same route into single journey legs.
+        This prevents showing multiple "transfers" when riding the same line through multiple stops.
+        """
+        if not path:
+            return []
+
+        consolidated = []
+        current_segment = None
+
+        for from_stop, to_stop, route_id, travel_time, is_transfer in path:
+            # Handle actual transfers (between different routes)
+            if is_transfer:
+                # If we have an ongoing segment, close it
+                if current_segment:
+                    consolidated.append(current_segment)
+                    current_segment = None
+
+                # Add the transfer as a separate segment
+                consolidated.append({
+                    'from_stop': from_stop,
+                    'to_stop': to_stop,
+                    'route_id': route_id,
+                    'travel_time': travel_time,
+                    'is_transfer': True
+                })
+                continue
+
+            # Handle regular route segments
+            if current_segment is None:
+                # Start a new segment
+                current_segment = {
+                    'from_stop': from_stop,
+                    'to_stop': to_stop,
+                    'route_id': route_id,
+                    'travel_time': travel_time,
+                    'is_transfer': False
+                }
+            elif current_segment['route_id'] == route_id:
+                # Same route - extend the current segment
+                current_segment['to_stop'] = to_stop
+                current_segment['travel_time'] += travel_time
+            else:
+                # Different route - close current segment and start new one
+                consolidated.append(current_segment)
+                current_segment = {
+                    'from_stop': from_stop,
+                    'to_stop': to_stop,
+                    'route_id': route_id,
+                    'travel_time': travel_time,
+                    'is_transfer': False
+                }
+
+        # Add the final segment if it exists
+        if current_segment:
+            consolidated.append(current_segment)
+
+        return consolidated
 
     async def _get_live_boarding_time(
         self,
@@ -396,7 +467,11 @@ class RoutePlanner:
         if is_transfer:
             return f"Transfer to {route_id} train {direction.lower()} to {to_name} ({travel_desc} ride, next train in {wait_desc})"
         else:
-            return f"Take {route_id} train {direction.lower()} to {to_name} ({travel_desc} ride, next train in {wait_desc})"
+            # For same-line journeys, emphasize it's one continuous ride
+            if from_name != to_name:
+                return f"Take {route_id} train {direction.lower()} from {from_name} to {to_name} ({travel_desc} ride, next train in {wait_desc})"
+            else:
+                return f"Take {route_id} train {direction.lower()} to {to_name} ({travel_desc} ride, next train in {wait_desc})"
 
     def clear_graph_cache(self):
         """Clear the loaded graph cache (for testing or updates)"""
