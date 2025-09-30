@@ -1,253 +1,1260 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>NYC Subway ETA</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NYC Subway Live</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 0; 
-            padding: 20px; 
-            background: #f8f9fa;
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-card: #ffffff;
+            --text-primary: #1a1a1a;
+            --text-secondary: #374151;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
         }
-        .container { 
-            max-width: 1200px; 
-            margin: 0 auto; 
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            overflow: hidden;
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border-color: #475569;
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
         }
+
+        [data-theme="night"] {
+            --bg-primary: #000000;
+            --bg-secondary: #111111;
+            --bg-card: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --text-muted: #888888;
+            --border-color: #333333;
+            --accent-color: #00ff88;
+            --accent-hover: #33ff99;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.5;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
         .header {
-            background: linear-gradient(135deg, #007cba, #005a87);
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 16px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: background-color 0.3s ease;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .live-indicator {
+            background: #10b981;
             color: white;
-            padding: 20px;
-            text-align: center;
-        }
-        .header h1 { 
-            margin: 0;
-            font-size: 2.2em;
-            font-weight: 300;
-        }
-        .content {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            height: 600px;
-        }
-        .sidebar {
-            padding: 20px;
-            border-right: 1px solid #eee;
-            background: #fafbfc;
-        }
-        .form-group { 
-            margin-bottom: 15px; 
-        }
-        label { 
-            display: block; 
-            margin-bottom: 5px; 
-            color: #333;
-            font-weight: 500;
-        }
-        select, button { 
-            padding: 12px; 
-            width: 100%; 
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-        select {
-            background: white;
-        }
-        button { 
-            background: #007cba; 
-            color: white; 
-            border: none; 
-            cursor: pointer; 
-            margin-top: 10px;
-            font-weight: 500;
-            transition: background 0.2s;
-        }
-        button:hover { 
-            background: #005a87; 
-        }
-        #map { 
-            height: 100%; 
-            width: 100%;
-        }
-        #results { 
-            margin-top: 20px; 
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .arrival { 
-            padding: 12px; 
-            margin: 8px 0; 
-            background: white; 
-            border-left: 4px solid #007cba;
-            border-radius: 0 4px 4px 0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        .route-badge {
-            background: #007cba;
-            color: white;
-            padding: 2px 8px;
+            padding: 4px 8px;
             border-radius: 12px;
             font-size: 12px;
-            font-weight: bold;
+            font-weight: 500;
+        }
+
+        .theme-toggle {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: var(--border-color);
+        }
+
+        .theme-option {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .theme-option.active {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 24px;
+            height: calc(100vh - 80px);
+            padding: 24px 0;
+        }
+
+        .sidebar {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s ease;
+        }
+
+        .map-container {
+            background: var(--bg-card);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            position: relative;
+            transition: background-color 0.3s ease;
+        }
+
+        #map { height: 100%; width: 100%; }
+
+        .search-section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            transition: border-color 0.2s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 8px;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .results-section {
+            margin-top: 24px;
+        }
+
+        .arrival-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            margin-bottom: 8px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s ease;
+        }
+
+        .arrival-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .route-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            color: white;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .arrival-details {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .eta-time {
+            font-weight: 600;
+            color: #059669;
+            font-size: 16px;
+        }
+
+        .route-step {
+            padding: 16px;
+            margin-bottom: 12px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            border-left: 4px solid #059669;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            touch-action: manipulation;
+            min-height: 44px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .route-step:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Mobile-specific touch interactions */
+        @media (hover: none) and (pointer: coarse) {
+            .route-step:hover {
+                transform: none;
+                box-shadow: none;
+            }
+
+            .route-step:active {
+                background: var(--bg-secondary);
+                transform: scale(0.98);
+                border-left-color: var(--accent-color);
+            }
+        }
+
+        .transfer-step {
+            border-left-color: #f59e0b;
+        }
+
+        [data-theme="dark"] .transfer-step {
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .step-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            opacity: 0.7;
+        }
+
+        .route-step:hover .step-hint {
+            opacity: 1;
+        }
+
+        .route-marker {
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            background: white;
+        }
+
+        .route-highlight {
+            z-index: 1000;
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .step-details {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .station-popup {
+            text-align: center;
+            min-width: 200px;
+        }
+
+        .station-popup h4 {
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .lines-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            justify-content: center;
+            margin: 8px 0;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 32px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 50%;
+            border-top-color: var(--accent-color);
+            animation: spin 1s ease-in-out infinite;
             margin-right: 8px;
         }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 20px;
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.2);
+            border-radius: 8px;
+            color: #dc3545;
+            margin: 16px 0;
+        }
+
+        .error-message button {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            margin-top: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .error-message button:hover {
+            background: #c82333;
+        }
+
+        .offline-banner {
+            background: #ffc107;
+            color: #212529;
+            text-align: center;
+            padding: 8px;
+            font-size: 14px;
+            display: none;
+        }
+
+        /* Mobile responsiveness and touch enhancements */
         @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 16px;
+                align-items: stretch;
+            }
+
+            .theme-toggle {
+                align-self: center;
+            }
+
+            .content {
+                padding: 16px;
+            }
+
+            .main-sections {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .input-group {
+                margin-bottom: 20px;
+            }
+
+            .input-group input,
+            .input-group select {
+                font-size: 16px;
+                padding: 16px 12px;
+                min-height: 44px;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .button-group {
+                gap: 12px;
+            }
+
+            .button-group button {
+                padding: 16px 24px;
+                font-size: 16px;
+                min-height: 44px;
+                flex: 1;
+                touch-action: manipulation;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            .arrival-item {
+                padding: 16px 12px;
+                min-height: 56px;
+            }
+
+            .step-hint {
+                font-size: 14px;
+                margin-top: 8px;
+            }
+
+            #map {
+                height: 300px;
+                border-radius: 12px;
+            }
+        }
+
+        /* Touch feedback for mobile */
+        @media (hover: none) and (pointer: coarse) {
+            .arrival-item:active {
+                background: var(--bg-secondary);
+                transform: scale(0.98);
+            }
+
+            .theme-toggle:active {
+                transform: scale(0.95);
+            }
+
+            input:focus,
+            select:focus {
+                outline: 2px solid var(--accent-color);
+                outline-offset: 2px;
+            }
+        }
+
+        /* Screen reader only text */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* Skip to main content link */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 6px;
+            background: var(--accent-color);
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 4px;
+            z-index: 9999;
+        }
+
+        .skip-link:focus {
+            top: 6px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        /* Complete NYC Subway line colors */
+        .line-1, .line-2, .line-3 { background: #ee352e; }
+        .line-4, .line-5, .line-6, .line-6X { background: #00933c; }
+        .line-7, .line-7X { background: #b933ad; }
+        .line-A, .line-C, .line-E { background: #0039a6; }
+        .line-B, .line-D, .line-F, .line-M { background: #ff6319; }
+        .line-G { background: #6cbe45; }
+        .line-J, .line-Z { background: #996633; }
+        .line-L { background: #a7a9ac; }
+        .line-N, .line-Q, .line-R, .line-W { background: #fccc0a; color: #000; }
+        .line-S { background: #808183; }
+        .line-T { background: #00add0; }
+
+        @media (max-width: 968px) {
             .content {
                 grid-template-columns: 1fr;
-                height: auto;
+                gap: 16px;
             }
             .sidebar {
-                border-right: none;
-                border-bottom: 1px solid #eee;
+                order: 2;
+                max-height: 400px;
             }
-            #map {
-                height: 400px;
+            .map-container {
+                order: 1;
+                height: 300px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .header-content {
+                padding: 0 16px;
+            }
+            .main-container {
+                padding: 0 16px;
+            }
+            .content {
+                padding: 16px 0;
             }
         }
     </style>
+
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚇</text></svg>">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🚇 NYC Subway Live</h1>
-        </div>
-        
-        <div class="content">
-            <div class="sidebar">
-                <div class="form-group">
-                    <label for="station">Select Station:</label>
-                    <select id="station">
-                        <option value="">Choose a station...</option>
-                        <option value="635">Times Square-42nd Street</option>
-                        <option value="902">Herald Square-34th Street</option>
-                        <option value="127">Union Square-14th Street</option>
-                        <option value="232">Grand Central-42nd Street</option>
-                        <option value="420">Canal Street</option>
-                        <option value="629">59th Street-Columbus Circle</option>
-                        <option value="D14">14th Street-8th Avenue</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="direction">Direction:</label>
-                    <select id="direction">
-                        <option value="N">Northbound</option>
-                        <option value="S">Southbound</option>
-                    </select>
-                </div>
-                
-                <button onclick="getArrivals()">Get Live Arrivals</button>
-                
-                <div id="results"></div>
+    <div class="offline-banner" id="offlineBanner">
+        📱 You're offline. Some features may not work properly.
+    </div>
+    <header class="header" role="banner">
+        <div class="header-content">
+            <div class="header-left">
+                <h1>🚇 NYC Subway</h1>
+                <span class="live-indicator" aria-label="Live real-time data">LIVE</span>
             </div>
-            
-            <div id="map"></div>
+            <div class="theme-toggle" role="group" aria-label="Theme selection">
+                <div class="theme-option active" onclick="setTheme('light')" role="button" tabindex="0" aria-label="Light theme">☀️</div>
+                <div class="theme-option" onclick="setTheme('dark')" role="button" tabindex="0" aria-label="Dark theme">🌙</div>
+                <div class="theme-option" onclick="setTheme('night')" role="button" tabindex="0" aria-label="Night theme">🌃</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="content">
+            <aside class="sidebar">
+                <div class="search-section">
+                    <h2 class="section-title">🚇 Live Arrivals</h2>
+
+                    <div class="input-group">
+                        <label for="stationSearch">Find a station</label>
+                        <input type="text" id="stationSearch" placeholder="Search stations... (e.g. Times Square, 14 St, Q train)" oninput="debounceSearch('searchStations')" autocomplete="off">
+                    </div>
+
+                    <div class="input-group">
+                        <select id="stationSelect">
+                            <option value="">Select a station...</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <select id="directionSelect">
+                            <option value="N">Northbound</option>
+                            <option value="S">Southbound</option>
+                        </select>
+                    </div>
+
+                    <button class="btn" onclick="getArrivals()">Show Arrivals</button>
+                </div>
+
+                <div class="search-section">
+                    <h2 class="section-title">🗺️ Trip Planner</h2>
+
+                    <div class="input-group">
+                        <label for="fromSearch">From</label>
+                        <input type="text" id="fromSearch" placeholder="Start typing station name or line..." oninput="debounceSearch('searchFromStations')" autocomplete="off">
+                        <select id="fromStation">
+                            <option value="">Select origin...</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="toSearch">To</label>
+                        <input type="text" id="toSearch" placeholder="Destination station or line..." oninput="debounceSearch('searchToStations')" autocomplete="off">
+                        <select id="toStation">
+                            <option value="">Select destination...</option>
+                        </select>
+                    </div>
+
+                    <button class="btn" onclick="planTrip()">Plan Trip</button>
+                </div>
+
+                <div id="results">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🗺️</div>
+                        <div>Select a station to see live arrivals<br>or plan your trip above</div>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="map-container">
+                <div id="map"></div>
+            </main>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         let map;
-        
+        let stationMarkers = [];
+        let selectedStation = null;
+        let allStations = [];
+
+        // Performance optimizations and caching
+        const cache = {
+            stations: null,
+            arrivals: new Map(),
+            routes: new Map()
+        };
+
+        const CACHE_DURATION = {
+            stations: 30 * 60 * 1000, // 30 minutes
+            arrivals: 60 * 1000,      // 1 minute
+            routes: 5 * 60 * 1000     // 5 minutes
+        };
+
+        function getCacheKey(type, params) {
+            return `${type}_${JSON.stringify(params)}`;
+        }
+
+        function isCacheValid(timestamp, duration) {
+            return Date.now() - timestamp < duration;
+        }
+
+        // Performance optimization: Lazy load markers only in viewport
+        function isInViewport(lat, lon) {
+            if (!map) return false;
+            const bounds = map.getBounds();
+            return bounds.contains([lat, lon]);
+        }
+
+        // Throttle function for performance
+        function throttle(func, delay) {
+            let timeoutId;
+            let lastExecTime = 0;
+            return function (...args) {
+                const currentTime = Date.now();
+                if (currentTime - lastExecTime > delay) {
+                    func.apply(this, args);
+                    lastExecTime = currentTime;
+                } else {
+                    clearTimeout(timeoutId);
+                    timeoutId = setTimeout(() => {
+                        func.apply(this, args);
+                        lastExecTime = Date.now();
+                    }, delay - (currentTime - lastExecTime));
+                }
+            };
+        }
+
+        // Theme management
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+
+            // Update active theme toggle
+            document.querySelectorAll('.theme-option').forEach(option => {
+                option.classList.remove('active');
+            });
+
+            if (theme === 'dark') {
+                document.querySelector('.theme-option[onclick="setTheme(\'dark\')"]').classList.add('active');
+            } else if (theme === 'night') {
+                document.querySelector('.theme-option[onclick="setTheme(\'night\')"]').classList.add('active');
+            } else {
+                document.querySelector('.theme-option[onclick="setTheme(\'light\')"]').classList.add('active');
+            }
+        }
+
+        // Load saved theme on page load
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            setTheme(savedTheme);
+        }
+
+        // Centralized line color mapping
+        function getLineColors() {
+            return {
+                '1': '#ee352e', '2': '#ee352e', '3': '#ee352e',
+                '4': '#00933c', '5': '#00933c', '6': '#00933c', '6X': '#00933c',
+                '7': '#b933ad', '7X': '#b933ad',
+                'A': '#0039a6', 'C': '#0039a6', 'E': '#0039a6',
+                'B': '#ff6319', 'D': '#ff6319', 'F': '#ff6319', 'M': '#ff6319',
+                'G': '#6cbe45',
+                'J': '#996633', 'Z': '#996633',
+                'L': '#a7a9ac',
+                'N': '#fccc0a', 'Q': '#fccc0a', 'R': '#fccc0a', 'W': '#fccc0a',
+                'S': '#808183', 'T': '#00add0'
+            };
+        }
+
+        // Load all stations from the API
+        async function loadStations() {
+            try {
+                // Check cache first
+                if (cache.stations && isCacheValid(cache.stations.timestamp, CACHE_DURATION.stations)) {
+                    allStations = cache.stations.data;
+                    populateStations();
+                    initMap();
+                    return;
+                }
+
+                // Use wildcard query to get all stations for map display
+                const response = await fetch('/api/stops?q=*');
+                const data = await response.json();
+                allStations = data.stops || [];
+
+                // Add major station coordinates (fallback if API doesn't have coordinates)
+                const stationCoords = {
+                    '635': {lat: 40.7560, lon: -73.9868},
+                    '902': {lat: 40.7505, lon: -73.9885},
+                    '127': {lat: 40.7347, lon: -73.9906},
+                    '232': {lat: 40.7527, lon: -73.9772},
+                    '420': {lat: 40.7189, lon: -73.9998},
+                    '629': {lat: 40.7685, lon: -73.9815},
+                    'R16': {lat: 40.7403, lon: -73.9969},
+                    'D14': {lat: 40.7588, lon: -73.9804},
+                    'A32': {lat: 40.7520, lon: -73.9930},
+                    'L14': {lat: 40.7374, lon: -73.9951}
+                };
+
+                // Add coordinates to stations if missing
+                allStations.forEach(station => {
+                    const coords = stationCoords[station.id];
+                    if (coords && !station.lat) {
+                        station.lat = coords.lat;
+                        station.lon = coords.lon;
+                    }
+                });
+
+                // Cache the result
+                cache.stations = {
+                    data: allStations,
+                    timestamp: Date.now()
+                };
+
+                populateStations();
+                initMap();
+            } catch (error) {
+                console.error('Error loading stations:', error);
+                // Try cached data first, then fallback to basic stations
+                if (cache.stations) {
+                    allStations = cache.stations.data;
+                } else {
+                    allStations = [
+                        {id: "635", name: "Times Sq-42 St", lines: ["N","Q","R","W","S","1","2","3","7"], lat: 40.7560, lon: -73.9868},
+                        {id: "902", name: "Herald Sq-34 St", lines: ["B","D","F","M","N","Q","R","W"], lat: 40.7505, lon: -73.9885},
+                        {id: "127", name: "14 St-Union Sq", lines: ["L","N","Q","R","W","4","5","6"], lat: 40.7347, lon: -73.9906}
+                    ];
+                }
+                populateStations();
+                initMap();
+            }
+        }
+
+        // Initialize map
         function initMap() {
             map = L.map('map').setView([40.7589, -73.9851], 12);
-            
-            // Clean CartoDB map tiles
+
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                 attribution: '© OpenStreetMap © CartoDB',
                 subdomains: 'abcd',
                 maxZoom: 19
             }).addTo(map);
-            
+
             // Add station markers
-            const stations = [
-                {id: "635", name: "Times Square", lat: 40.7560, lon: -73.9868, lines: ["N","Q","R","W","S","1","2","3","7"]},
-                {id: "902", name: "Herald Square", lat: 40.7505, lon: -73.9885, lines: ["B","D","F","M","N","Q","R","W"]},
-                {id: "127", name: "Union Square", lat: 40.7347, lon: -73.9906, lines: ["L","N","Q","R","W","4","5","6"]},
-                {id: "232", name: "Grand Central", lat: 40.7527, lon: -73.9772, lines: ["4","5","6","7","S"]},
-                {id: "420", name: "Canal Street", lat: 40.7189, lon: -73.9998, lines: ["J","Z","N","Q","R","W","6"]},
-                {id: "629", name: "Columbus Circle", lat: 40.7685, lon: -73.9815, lines: ["A","B","C","D","1"]},
-                {id: "D14", name: "14th St-8th Ave", lat: 40.7374, lon: -73.9951, lines: ["A","C","E","L"]}
-            ];
-            
-            stations.forEach(station => {
-                // Create custom icon
-                const icon = L.divIcon({
-                    className: 'custom-marker',
-                    html: `<div style="background: #007cba; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">🚇</div>`,
-                    iconSize: [24, 24],
-                    iconAnchor: [12, 12]
-                });
-                
-                const marker = L.marker([station.lat, station.lon], { icon }).addTo(map);
-                
-                const linesHtml = station.lines.map(line => 
-                    `<span style="background: #007cba; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; margin-right: 4px;">${line}</span>`
-                ).join('');
-                
-                marker.bindPopup(`
-                    <div style="text-align: center; min-width: 150px;">
-                        <h4 style="margin: 0 0 8px 0;">${station.name}</h4>
-                        <div style="margin-bottom: 8px;">${linesHtml}</div>
-                        <button onclick="selectStation('${station.id}')" style="padding: 4px 12px; background: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer;">Select Station</button>
-                    </div>
-                `);
+            allStations.forEach(station => {
+                if (station.lat && station.lon) {
+                    // Get primary line color for marker
+                    const primaryLine = station.lines[0] || '1';
+                    const lineColors = getLineColors();
+
+                    const marker = L.circleMarker([station.lat, station.lon], {
+                        radius: 6,
+                        fillColor: lineColors[primaryLine] || '#667eea',
+                        color: 'white',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.9
+                    });
+
+                    const linesHtml = station.lines.map(line =>
+                        `<span class="route-badge line-${line}">${line}</span>`
+                    ).join(' ');
+
+                    const popupContent = `
+                        <div class="station-popup">
+                            <h4>${station.name}</h4>
+                            <div class="lines-display">${linesHtml}</div>
+                            <button onclick="selectStationFromMap('${station.id}')" class="btn" style="margin-top: 12px; padding: 8px 16px; font-size: 12px;">
+                                View Arrivals
+                            </button>
+                        </div>
+                    `;
+
+                    marker.bindPopup(popupContent);
+                    marker.addTo(map);
+                    stationMarkers.push({marker, station});
+
+                    marker.on('click', () => {
+                        selectStationFromMap(station.id);
+                    });
+                }
             });
         }
-        
-        function selectStation(stationId) {
-            document.getElementById('station').value = stationId;
-            map.closePopup();
+
+        // Populate station dropdowns
+        function populateStations() {
+            const selects = ['stationSelect', 'fromStation', 'toStation'];
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                select.innerHTML = '<option value="">Select a station...</option>';
+                allStations.forEach(station => {
+                    const option = document.createElement('option');
+                    option.value = station.id;
+                    option.textContent = station.name;
+                    select.appendChild(option);
+                });
+            });
         }
-        
+
+        // Search functionality
+        // Debounce timers
+        let searchTimers = {};
+
+        function debounceSearch(functionName) {
+            clearTimeout(searchTimers[functionName]);
+            searchTimers[functionName] = setTimeout(() => {
+                window[functionName]();
+            }, 150);
+        }
+
+        function searchStations() {
+            const query = document.getElementById('stationSearch').value.toLowerCase();
+            filterStationSelect('stationSelect', query);
+        }
+
+        function searchFromStations() {
+            const query = document.getElementById('fromSearch').value.toLowerCase();
+            filterStationSelect('fromStation', query);
+        }
+
+        function searchToStations() {
+            const query = document.getElementById('toSearch').value.toLowerCase();
+            filterStationSelect('toStation', query);
+        }
+
+        function filterStationSelect(selectId, query) {
+            const select = document.getElementById(selectId);
+            select.innerHTML = '<option value="">Select a station...</option>';
+
+            if (!query || query.length < 2) {
+                // Show all stations if query is too short
+                allStations.slice(0, 20).forEach(station => {
+                    const option = document.createElement('option');
+                    option.value = station.id;
+                    option.textContent = `${station.name} (${station.lines.join(', ')})`;
+                    select.appendChild(option);
+                });
+                return;
+            }
+
+            // Enhanced search with scoring
+            const scored = allStations.map(station => {
+                let score = 0;
+                const name = station.name.toLowerCase();
+                const queryLower = query.toLowerCase();
+
+                // Exact match bonus
+                if (name === queryLower) score += 100;
+
+                // Starts with bonus
+                if (name.startsWith(queryLower)) score += 50;
+
+                // Contains bonus
+                if (name.includes(queryLower)) score += 20;
+
+                // Word boundary bonus
+                const words = name.split(/[\s-]+/);
+                words.forEach(word => {
+                    if (word.startsWith(queryLower)) score += 30;
+                });
+
+                // Line match bonus
+                station.lines.forEach(line => {
+                    if (line.toLowerCase().includes(queryLower)) score += 10;
+                });
+
+                return { station, score };
+            })
+            .filter(item => item.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 15); // Limit results
+
+            scored.forEach(({ station }) => {
+                const option = document.createElement('option');
+                option.value = station.id;
+                option.textContent = `${station.name} (${station.lines.join(', ')})`;
+                select.appendChild(option);
+            });
+
+            // Show "no results" if nothing found
+            if (scored.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No stations found...';
+                option.disabled = true;
+                select.appendChild(option);
+            }
+        }
+
+        // Select station from map
+        function selectStationFromMap(stationId) {
+            document.getElementById('stationSelect').value = stationId;
+            highlightStation(stationId);
+            getArrivals();
+        }
+
+        // Highlight route on map
+        function highlightRouteOnMap(fromStopId, toStopId, lineColor) {
+            // Clear existing route highlighting
+            clearRouteHighlighting();
+
+            // Get station coordinates
+            const fromStation = allStations.find(s => s.id === fromStopId.replace(/[NSEW]$/, ''));
+            const toStation = allStations.find(s => s.id === toStopId.replace(/[NSEW]$/, ''));
+
+            if (!fromStation || !toStation) {
+                console.warn('Could not find stations for route highlighting:', fromStopId, toStopId);
+                return;
+            }
+
+            // Draw route line on map
+            const routeLine = L.polyline([
+                [fromStation.lat, fromStation.lon],
+                [toStation.lat, toStation.lon]
+            ], {
+                color: lineColor,
+                weight: 6,
+                opacity: 0.8,
+                className: 'route-highlight'
+            }).addTo(map);
+
+            // Add special markers for route endpoints
+            const routeStartIcon = L.divIcon({
+                className: 'route-marker route-start',
+                html: '🚇',
+                iconSize: [25, 25],
+                iconAnchor: [12, 12]
+            });
+
+            const routeEndIcon = L.divIcon({
+                className: 'route-marker route-end',
+                html: '🎯',
+                iconSize: [25, 25],
+                iconAnchor: [12, 12]
+            });
+
+            const startMarker = L.marker([fromStation.lat, fromStation.lon], { icon: routeStartIcon }).addTo(map);
+            const endMarker = L.marker([toStation.lat, toStation.lon], { icon: routeEndIcon }).addTo(map);
+
+            // Store for cleanup
+            window.currentRouteHighlights = [routeLine, startMarker, endMarker];
+
+            // Fit map to show the route
+            map.fitBounds([
+                [fromStation.lat, fromStation.lon],
+                [toStation.lat, toStation.lon]
+            ], { padding: [20, 20] });
+        }
+
+        // Clear route highlighting
+        function clearRouteHighlighting() {
+            if (window.currentRouteHighlights) {
+                window.currentRouteHighlights.forEach(layer => {
+                    map.removeLayer(layer);
+                });
+                window.currentRouteHighlights = null;
+            }
+        }
+
+        // Highlight selected station
+        function highlightStation(stationId) {
+            // Reset all markers to their original colors
+            stationMarkers.forEach(({marker, station}) => {
+                const primaryLine = station.lines[0] || '1';
+                const lineColors = getLineColors();
+                marker.setStyle({
+                    fillColor: lineColors[primaryLine] || '#3b82f6',
+                    radius: 6
+                });
+            });
+
+            const selected = stationMarkers.find(({station}) => station.id === stationId);
+            if (selected) {
+                selected.marker.setStyle({
+                    fillColor: '#ef4444',
+                    radius: 10
+                });
+                selectedStation = stationId;
+            }
+        }
+
+        // Get live arrivals
         async function getArrivals() {
-            const station = document.getElementById('station').value;
-            const direction = document.getElementById('direction').value;
-            const results = document.getElementById('results');
-            
-            if (!station) {
+            const stationId = document.getElementById('stationSelect').value;
+            const direction = document.getElementById('directionSelect').value;
+
+            if (!stationId) {
                 alert('Please select a station');
                 return;
             }
-            
-            results.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Loading arrivals...</div>';
-            
+
+            highlightStation(stationId);
+            const station = allStations.find(s => s.id === stationId);
+
+            document.getElementById('results').innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading live arrivals...</div>';
+
             try {
-                const response = await fetch(`/api/arrivals?stop_id=${station}&direction=${direction}`);
+                // Strip direction suffix from station ID for arrivals API
+                const baseStationId = stationId.replace(/[NS]$/, '');
+                const cacheKey = getCacheKey('arrivals', { stationId: baseStationId, direction });
+
+                // Check cache first
+                if (cache.arrivals.has(cacheKey)) {
+                    const cached = cache.arrivals.get(cacheKey);
+                    if (isCacheValid(cached.timestamp, CACHE_DURATION.arrivals)) {
+                        const data = cached.data;
+                        // Use cached data but still show content below
+                    } else {
+                        cache.arrivals.delete(cacheKey);
+                    }
+                }
+
+                const response = await fetch(`/api/arrivals?stop_id=${baseStationId}&direction=${direction}`);
                 const data = await response.json();
-                
+
+                // Cache the result
+                cache.arrivals.set(cacheKey, {
+                    data: data,
+                    timestamp: Date.now()
+                });
+
+                let html = `
+                <div class="results-section">
+                    <h3 class="section-title">🚇 ${station.name}</h3>
+                    <p style="margin-bottom: 16px; color: #6b7280; font-size: 14px;">${direction === 'N' ? 'Northbound' : 'Southbound'} trains</p>
+            `;
+
                 if (data.arrivals && data.arrivals.length > 0) {
-                    let html = '<h3 style="margin: 0 0 10px 0; color: #333;">Live Arrivals:</h3>';
                     data.arrivals.forEach(arrival => {
                         const minutes = Math.floor(arrival.eta_s / 60);
-                        const time = minutes <= 0 ? 'Now' : `${minutes} min`;
+                        const timeText = minutes <= 0 ? 'Now' : `${minutes} min`;
                         html += `
-                            <div class="arrival">
-                                <span class="route-badge">${arrival.route_id}</span>
-                                <strong>${arrival.headsign}</strong><br>
-                                <small style="color: #007cba; font-weight: bold;">${time}</small>
+                            <div class="arrival-item">
+                                <div class="arrival-info">
+                                    <span class="route-badge line-${arrival.route_id}">${arrival.route_id}</span>
+                                    <div class="arrival-details">${arrival.headsign}</div>
+                                </div>
+                                <div class="eta-time">${timeText}</div>
                             </div>
                         `;
                     });
-                    results.innerHTML = html;
                 } else {
-                    results.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">No arrivals found for this station and direction.</div>';
+                    html += `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🚇</div>
+                            <div>No live arrivals available</div>
+                        </div>
+                    `;
+                }
+                html += '</div>';
+
+                document.getElementById('results').innerHTML = html;
+
+                if (station.lat && station.lon) {
+                    map.setView([station.lat, station.lon], 14);
                 }
             } catch (error) {
-                results.innerHTML = '<div style="text-align: center; padding: 20px; color: #d32f2f;">Error loading arrivals. Please try again.</div>';
-                console.error('Error:', error);
+                console.error('Error fetching arrivals:', error);
+                document.getElementById('results').innerHTML = `
+                    <div class="error-message">
+                        <div>❌ Error loading arrivals</div>
+                        <div style="margin-top: 8px; font-size: 14px; opacity: 0.8;">Check your connection or try again</div>
+                        <button onclick="fetchArrivals('${stationId}')">Retry</button>
+                    </div>
+                `;
             }
         }
-        
-        // Initialize map when page loads
-        document.addEventListener('DOMContentLoaded', initMap);
+
+        // Plan trip
+        async function planTrip() {
+            // Clear any existing route highlighting
+            clearRouteHighlighting();
+
+            const fromId = document.getElementById('fromStation').value;
+            const toId = document.getElementById('toStation').value;
+
+            if (!fromId || !toId) {
+                alert('Please select both from and to stations');
+                return;
+            }
+
+            if (fromId === toId) {
+                alert('Please select different stations');
+                return;
+            }
+
+            const fromStation = allStations.find(s => s.id === fromId);
+            const toStation = allStations.find(s => s.id === toId);
+
+            document.getElementById('results').innerHTML = '<div class="loading"><div class="loading-spinner"></div>Planning your trip...</div>';
+
+            try {
+                const response = await fetch(`/api/route?from=${fromId}&to=${toId}`);
+
+                if (response.ok) {
+                    const route = await response.json();
+
+                    let html = `
+                        <div class="results-section">
+                            <h3 class="section-title">🗺️ ${fromStation.name} → ${toStation.name}</h3>
+                            <p style="margin-bottom: 16px; color: #6b7280; font-size: 14px;">Total time: ${Math.floor(route.total_eta_s / 60)} minutes • ${route.transfers} transfer${route.transfers !== 1 ? 's' : ''}</p>
+                    `;
+
+                    route.legs.forEach((leg, index) => {
+                        html += `
+                            <div class="route-step ${leg.transfer ? 'transfer-step' : ''}"
+                                 onclick="highlightRouteOnMap('${leg.from_stop_id}', '${leg.to_stop_id}', '${leg.line_color || '#6D6E71'}')"
+                                 style="cursor: pointer;">
+                                <div class="step-header">
+                                    <span class="route-badge line-${leg.route_id}"
+                                          style="background-color: ${leg.line_color || '#6D6E71'};">${leg.route_id}</span>
+                                    <strong>${leg.from_stop_name || 'Station'} → ${leg.to_stop_name || 'Station'}</strong>
+                                </div>
+                                <div class="step-details">
+                                    ${leg.instruction || `Wait ${Math.floor(leg.board_in_s / 60)} min • Travel ${Math.floor(leg.run_s / 60)} min`}
+                                </div>
+                                <div class="step-hint">
+                                    💡 Click to see route on map
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    html += '</div>';
+                    document.getElementById('results').innerHTML = html;
+                } else {
+                    const error = await response.json();
+                    document.getElementById('results').innerHTML = `<div style="text-align: center; padding: 20px; color: #dc3545;">${error.detail || 'No route found'}</div>`;
+                }
+            } catch (error) {
+                console.error('Error planning route:', error);
+                document.getElementById('results').innerHTML = `
+                    <div class="error-message">
+                        <div>❌ Error planning route</div>
+                        <div style="margin-top: 8px; font-size: 14px; opacity: 0.8;">Network error or service unavailable</div>
+                        <button onclick="planTrip()">Try Again</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Network status detection
+        function updateNetworkStatus() {
+            const offlineBanner = document.getElementById('offlineBanner');
+            if (navigator.onLine) {
+                offlineBanner.style.display = 'none';
+            } else {
+                offlineBanner.style.display = 'block';
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTheme();
+            loadStations();
+            updateNetworkStatus();
+
+            // Listen for network status changes
+            window.addEventListener('online', updateNetworkStatus);
+            window.addEventListener('offline', updateNetworkStatus);
+        });
     </script>
 </body>
 </html>
