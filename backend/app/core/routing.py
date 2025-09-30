@@ -121,7 +121,14 @@ class RoutePlanner:
 
         # Calculate total time and transfers
         total_eta_s = sum(leg.board_in_s + leg.run_s for leg in legs)
-        transfers = sum(1 for leg in legs if leg.transfer)
+
+        # Count actual transfers (route changes), not just legs after the first
+        transfers = 0
+        if len(legs) > 1:
+            for i in range(1, len(legs)):
+                # Only count as transfer if route_id is different from previous leg
+                if legs[i].route_id != legs[i-1].route_id:
+                    transfers += 1
 
         # TODO: Get alerts for affected routes
         alerts = []
