@@ -147,6 +147,8 @@ class RoutePlanner:
 
         # Calculate total time and transfers
         total_eta_s = sum(leg.board_in_s + leg.run_s for leg in legs)
+
+        # Count actual transfers (route changes only)
         transfers = sum(1 for leg in legs if leg.transfer)
 
         # TODO: Get alerts for affected routes
@@ -265,6 +267,11 @@ class RoutePlanner:
             line_color = self._get_line_color(route_id)
             instruction = self._create_instruction(route_id, from_name, to_name, direction, board_in_s, total_travel_time, (i > 0))
 
+            # Only mark as transfer if it's a different route from the previous leg
+            is_actual_transfer = False
+            if i > 0 and len(legs) > 0:
+                is_actual_transfer = (route_id != legs[-1].route_id)
+
             legs.append(RouteLeg(
                 route_id=route_id,
                 from_stop_id=from_stop,
@@ -273,7 +280,7 @@ class RoutePlanner:
                 to_stop_name=to_name,
                 board_in_s=board_in_s,
                 run_s=total_travel_time,
-                transfer=(i > 0),  # First leg is never a transfer
+                transfer=is_actual_transfer,
                 direction=direction,
                 line_color=line_color,
                 instruction=instruction
